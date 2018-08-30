@@ -2,15 +2,17 @@ package tanggod.github.io.runtimechangebytecode.core;
 
 import org.apache.commons.lang.StringUtils;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipOutputStream;
 
 /*
  *动态改变字节码
@@ -42,7 +44,6 @@ public interface RuntimeChangeBytecode {
     /**
      * 获取当前模块target下的classes文件夹的路径
      *
-     * @return
      */
     default String getResolverSearchPath() {
         try {
@@ -56,6 +57,22 @@ public interface RuntimeChangeBytecode {
             return null;
         }
         return null;
+    }
+
+    /**
+     * 获取当前模块target下的jar包路径
+     */
+    default String getResolverInstallJarPath() {
+        String resolverSearchPath = getResolverSearchPath();
+        String target = resolverSearchPath.substring(0, resolverSearchPath.lastIndexOf("\\"));
+
+        File targetFile = new File(target);
+        return Arrays.stream(targetFile.listFiles()).filter(file -> file.isFile()).filter(file -> {
+            String filterName;
+            filterName = file.getName().substring(file.getName().lastIndexOf(".") + 1);
+            return "jar".equals(filterName);
+        }).findFirst().get().getAbsolutePath();
+
     }
 
     /**
@@ -236,4 +253,78 @@ public interface RuntimeChangeBytecode {
         String typePackageName = cla.getTypeName();
         return typePackageName.replace(cla.getSimpleName(), getProxyName(cla));
     }
+
+    /**
+     * 读取流
+     *
+     * @param inStream
+     * @return 字节数组
+     * @throws Exception
+     */
+    default byte[] readStream(InputStream inStream) throws Exception {
+        ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len = -1;
+        while ((len = inStream.read(buffer)) != -1) {
+            outSteam.write(buffer, 0, len);
+        }
+        outSteam.close();
+        inStream.close();
+        return outSteam.toByteArray();
+    }
+
+    /**
+     * 修改Jar包里的文件或者添加文件
+     *
+     * @param jarFilePath jar包路径
+     * @param entryName   要写的文件名
+     * @param data        文件内容
+     * @throws Exception
+     */
+    default void writeJarFile(String jarFilePath, String entryName, String installPath, byte[] data) throws Exception {
+
+        //1、首先将原Jar包里的所有内容读取到内存里，用TreeMap保存
+        JarFile jarFile = new JarFile(jarFilePath);
+        //可以保持排列的顺序,所以用TreeMap 而不用HashMap
+        TreeMap tm = new TreeMap();
+        Enumeration es = jarFile.entries();
+        while (es.hasMoreElements()) {
+            JarEntry je = (JarEntry) es.nextElement();
+            byte[] b = readStream(jarFile.getInputStream(je));
+            tm.put(je.getName(), b);
+        }
+
+        JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFilePath));
+        Iterator it = tm.entrySet().iterator();
+        boolean has = false;
+
+        //2、将TreeMap重新写到原jar里，如果TreeMap里已经有entryName文件那么覆盖，否则在最后添加
+        while (it.hasNext()) {
+            Map.Entry item = (Map.Entry) it.next();
+            String name = (String) item.getKey();
+            JarEntry entry = new JarEntry(name);
+            jos.putNextEntry(entry);
+            byte[] temp;
+            if (name.equals(entryName)) {
+                //覆盖
+                temp = data;
+                has = true;
+            } else {
+                temp = (byte[]) item.getValue();
+            }
+            jos.write(temp, 0, temp.length);
+        }
+
+        if (!has) {
+            //最后添加
+            JarEntry newEntry = new JarEntry("BOOT-INF\\classes\\" + installPath.replace(".","\\") + "\\" + entryName);
+            jos.putNextEntry(newEntry);
+            jos.write(data, 0, data.length);
+        }
+        jos.finish();
+        jos.close();
+
+    }
+
+
 }

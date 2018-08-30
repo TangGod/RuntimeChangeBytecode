@@ -15,6 +15,7 @@
 		<module>api</module>
 		<module>provider</module>
 		<module>eureka</module>
+		<module>core</module>
 	</modules>
 
 	<properties>

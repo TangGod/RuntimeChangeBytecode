@@ -15,9 +15,8 @@ import tanggod.github.io.api.UserDto;
  *@date 2018/8/27
  */
 @RequestMapping("/user")
-@Proxy
+@Proxy("user-provider")
 public interface UserApi {
-
 
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     List<UserDto> list();

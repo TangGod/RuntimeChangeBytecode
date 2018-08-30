@@ -25,7 +25,7 @@ import java.util.jar.JarOutputStream;
  *@author teddy
  *@date 2018/8/29
  */
-@Component
+//@Component
 public class BytecodeConfig {
     public static final String resolverSearchPath = getResolverSearchPath();
 
