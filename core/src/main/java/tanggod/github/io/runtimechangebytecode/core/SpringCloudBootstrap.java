@@ -7,10 +7,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import tanggod.github.io.common.annotation.EnableFeignClientProxy;
+import tanggod.github.io.common.annotation.EnableServerFallbackProxy;
 import tanggod.github.io.common.utils.ServiceLoaderApi;
 import tanggod.github.io.common.utils.SpringBeanUtils;
 import tanggod.github.io.runtimechangebytecode.core.config.FeignConfig;
+import tanggod.github.io.runtimechangebytecode.core.config.HystrixConfig;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
@@ -22,32 +25,41 @@ import java.util.stream.StreamSupport;
  *@date 2018/8/30
  */
 @Configurable
+@SuppressWarnings("all")
 public class SpringCloudBootstrap implements ApplicationContextAware {
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         SpringBeanUtils.getInstance().setCfgContext((ConfigurableApplicationContext) applicationContext);
-        SpringBeanUtils.getInstance().registerBean(runtimeChangeBytecode.getClass().getSimpleName(), runtimeChangeBytecode);
+        runtimeChangeBytecodeList.stream().forEach(runtimeChangeBytecode -> SpringBeanUtils.getInstance().registerBean(runtimeChangeBytecode.getClass().getTypeName(), runtimeChangeBytecode));
     }
 
-    private static RuntimeChangeBytecode runtimeChangeBytecode;
+    private static List<? extends RuntimeChangeBytecode> runtimeChangeBytecodeList;
 
     protected static void run(Class<?> primarySource, String... args) throws Exception {
         loadSpiSupport(primarySource);
-        runtimeChangeBytecode.createProxy(null, null);
+        initializeProxy(runtimeChangeBytecodeList);
         SpringApplication.run(primarySource, args);
+    }
+
+    private static void initializeProxy(List<? extends RuntimeChangeBytecode> runtimeChangeBytecodeList) throws Exception {
+        RuntimeChangeBytecode feignConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, FeignConfig.class)).findFirst().orElse(null);
+        if (null != feignConfig)
+            feignConfig.createProxy(null, null);
+        RuntimeChangeBytecode hystrixConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, HystrixConfig.class)).findFirst().orElse(null);
+        if (null != hystrixConfig)
+            hystrixConfig.createChangeProxy(null, null);
     }
 
     private static <S> void loadSpiSupport(Class<?> primarySource) {
         ServiceLoader<? extends RuntimeChangeBytecode> runtimeChangeBytecodes = ServiceLoaderApi.loadAll(RuntimeChangeBytecode.class);
-        runtimeChangeBytecode = StreamSupport.stream(runtimeChangeBytecodes.spliterator(), false).findFirst().orElseThrow(NullPointerException::new);
+        //runtimeChangeBytecodeList;
+        runtimeChangeBytecodeList = StreamSupport.stream(runtimeChangeBytecodes.spliterator(), false).filter(data -> (compareClassType(data, FeignConfig.class) ? primarySource.isAnnotationPresent(EnableFeignClientProxy.class) : true)).collect(Collectors.toList());
+        runtimeChangeBytecodeList = runtimeChangeBytecodeList.stream().filter(data -> (compareClassType(data, HystrixConfig.class) ? primarySource.isAnnotationPresent(EnableServerFallbackProxy.class) : true)).collect(Collectors.toList());
+    }
 
-        List<? extends RuntimeChangeBytecode> collect = StreamSupport.stream(runtimeChangeBytecodes.spliterator(), false).filter(data -> {
-            if (data.getClass().getTypeName().equals(FeignConfig.class.getTypeName()) && !primarySource.isAnnotationPresent(EnableFeignClientProxy.class)) {
-                return false;
-            }
-            return true;
-        }).collect(Collectors.toList());
+    private static boolean compareClassType(Object class1, Class class2) {
+        return class1.getClass().getTypeName().equals(class2.getTypeName());
     }
 
 }

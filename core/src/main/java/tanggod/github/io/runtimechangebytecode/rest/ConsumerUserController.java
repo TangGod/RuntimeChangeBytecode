@@ -14,20 +14,20 @@ import java.util.List;
  *@author teddy
  *@date 2018/8/27
  */
-@RestController
-public class UserController {
+//@RestController
+public class ConsumerUserController {
 
     @Autowired(required = false)
     private UserApi userApi;
 
 
-    public UserController(){
+    public ConsumerUserController(){
         System.out.println();
     }
 
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     public List<UserDto> list() {
-        List<UserDto> list = userApi.list();
+        List<UserDto> list = userApi.list().getData();
         return list;
     }
 

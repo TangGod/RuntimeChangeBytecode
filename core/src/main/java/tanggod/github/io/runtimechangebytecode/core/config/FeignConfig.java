@@ -22,6 +22,7 @@ import java.util.Set;
  *@author teddy
  *@date 2018/8/30
  */
+@SuppressWarnings("all")
 public class FeignConfig implements RuntimeChangeBytecode {
 
     public static final List<String> packages = new ArrayList<>();

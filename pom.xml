@@ -16,6 +16,7 @@
 		<module>provider</module>
 		<module>eureka</module>
 		<module>core</module>
+		<module>common</module>
 	</modules>
 
 	<properties>

@@ -19,6 +19,7 @@ import java.util.zip.ZipOutputStream;
  *@author teddy
  *@date 2018/8/30
  */
+@SuppressWarnings("all")
 public interface RuntimeChangeBytecode {
 
     String proxyPrefix = "Proxy$";

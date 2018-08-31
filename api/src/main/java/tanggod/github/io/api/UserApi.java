@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import tanggod.github.io.api.UserDto;
 import tanggod.github.io.common.annotation.FeignProxy;
+import tanggod.github.io.common.dto.BaseBean;
+import tanggod.github.io.common.dto.MessageBean;
 
 /*
  *
@@ -21,16 +23,16 @@ import tanggod.github.io.common.annotation.FeignProxy;
 public interface UserApi {
 
     @RequestMapping(value = "/list", method = RequestMethod.GET)
-    List<UserDto> list();
+    MessageBean<List<UserDto>> list();
 
     @RequestMapping(value = "/get", method = RequestMethod.GET)
-    UserDto get();
+    BaseBean get();
 
     @RequestMapping(value = "/getById", method = RequestMethod.GET)
-    UserDto getById(@RequestParam("id") String id);
+    BaseBean getById(@RequestParam("id") String id);
 
     @RequestMapping(value = "/create", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
-    Boolean create(@RequestBody UserDto userDto);
+    BaseBean create(@RequestBody UserDto userDto);
 
 
 

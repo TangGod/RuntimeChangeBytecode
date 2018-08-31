@@ -1,9 +1,15 @@
 package tanggod.github.io.provider;
 
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+import com.netflix.hystrix.contrib.javanica.conf.HystrixPropertiesManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 import tanggod.github.io.api.UserApi;
 import tanggod.github.io.api.UserDto;
+import tanggod.github.io.common.dto.BaseBean;
+import tanggod.github.io.common.dto.MessageBean;
+import tanggod.github.io.common.utils.BaseService;
 
 import java.util.List;
 
@@ -19,22 +25,22 @@ public class UserController implements UserApi{
     private UserApiService userApi;
 
     @Override
-    public List<UserDto> list() {
+    public MessageBean<List<UserDto>> list() {
         return userApi.list();
     }
 
     @Override
-    public UserDto get() {
+    public BaseBean get() {
         return userApi.get();
     }
 
     @Override
-    public UserDto getById(String id) {
+    public BaseBean getById(String id) {
         return userApi.getById(id);
     }
 
     @Override
-    public Boolean create(UserDto userDto) {
+    public BaseBean create(UserDto userDto) {
         return userApi.create(userDto);
     }
 }
