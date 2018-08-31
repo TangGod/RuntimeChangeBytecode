@@ -36,7 +36,7 @@ public class SpringCloudBootstrap implements ApplicationContextAware {
 
     private static List<? extends RuntimeChangeBytecode> runtimeChangeBytecodeList;
 
-    protected static void run(Class<?> primarySource, String... args) throws Exception {
+    public static void run(Class<?> primarySource, String... args) throws Exception {
         loadSpiSupport(primarySource);
         initializeProxy(runtimeChangeBytecodeList);
         SpringApplication.run(primarySource, args);

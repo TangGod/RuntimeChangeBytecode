@@ -26,7 +26,7 @@ public interface UserApi {
     MessageBean<List<UserDto>> list();
 
     @RequestMapping(value = "/get", method = RequestMethod.GET)
-    BaseBean get();
+    MessageBean get();
 
     @RequestMapping(value = "/getById", method = RequestMethod.GET)
     BaseBean getById(@RequestParam("id") String id);

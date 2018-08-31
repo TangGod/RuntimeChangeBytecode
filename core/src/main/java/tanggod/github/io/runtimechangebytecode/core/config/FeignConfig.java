@@ -69,11 +69,11 @@ public class FeignConfig implements RuntimeChangeBytecode {
                 //给类添加上注解
                 classFile.addAttribute(classAttr);
                 //这一步会修改java的字节码
-                try {
+              /*  try {
                     Class api = proxyInterface.toClass();
                 } catch (CannotCompileException e) {
                     System.out.println("target/classes 已加载该class ：" + getProxyPackageName(currentClass));
-                }
+                }*/
 
                 //生成到resolverSearchPath
                 proxyInterface.writeFile(getResolverSearchPath());

@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 public class UserController implements UserApi{
 
-    @Autowired
+    @Autowired(required = false)
     private UserApiService userApi;
 
     @Override
@@ -30,7 +30,7 @@ public class UserController implements UserApi{
     }
 
     @Override
-    public BaseBean get() {
+    public MessageBean get() {
         return userApi.get();
     }
 

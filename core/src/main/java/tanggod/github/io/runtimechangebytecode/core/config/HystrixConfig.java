@@ -21,6 +21,7 @@ import tanggod.github.io.common.dto.MessageBean;
 import tanggod.github.io.common.utils.PropertyUtil;
 import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
 
+import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -46,6 +47,9 @@ public class HystrixConfig implements RuntimeChangeBytecode {
         classes = filterAnnotation(ServerFallbackProxy.class, classes);
         ClassPool classPool = ClassPool.getDefault();
 
+        // TODO
+        classPool.makeClass(new FileInputStream(""));
+
         classes.stream().forEach(currentClass -> {
             try {
                 /*FeignProxy annotation = currentClass.getAnnotation(FeignProxy.class);
@@ -55,11 +59,6 @@ public class HystrixConfig implements RuntimeChangeBytecode {
                 //构建一个代理接口
                 //currentClass.getTypeName()
                 CtClass proxyService = classPool.get("tanggod.github.io.provider.UserApiService");
-
-                proxyService.writeFile(getResolverSearchPath());
-               if (true)
-                   return;
-
                 //代理的class
                 ClassFile classFile = proxyService.getClassFile();
                 //constPool
@@ -74,13 +73,13 @@ public class HystrixConfig implements RuntimeChangeBytecode {
                 //构建注解
                 AnnotationsAttribute methodAttr = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
                 Annotation hystrixCommand = new Annotation(HystrixCommand.class.getTypeName(), constPool);
-                hystrixCommand.addMemberValue("fallbackMethod", new StringMemberValue("fallbackMethod", constPool));
+                hystrixCommand.addMemberValue("fallbackMethod", new StringMemberValue("fallback", constPool));
 
                 //注解里包含注解
                 //默认10秒;如果并发数达到该设置值，请求会被拒绝和抛出异常并且fallback不会被调用。
                 String fallbackIsolationSemaphoreMaxConcurrentRequests = HystrixPropertiesManager.FALLBACK_ISOLATION_SEMAPHORE_MAX_CONCURRENT_REQUESTS;
                 Annotation hystrixProperty = new Annotation(HystrixProperty.class.getTypeName(), constPool);
-                hystrixProperty.addMemberValue("name", new StringMemberValue("fallbackIsolationSemaphoreMaxConcurrentRequests", constPool));
+                hystrixProperty.addMemberValue("name", new StringMemberValue(fallbackIsolationSemaphoreMaxConcurrentRequests, constPool));
                 //并发大小
                 hystrixProperty.addMemberValue("value", new StringMemberValue("15", constPool));
 
@@ -91,20 +90,21 @@ public class HystrixConfig implements RuntimeChangeBytecode {
 
                 //给方法添加上注解
                 methodInfo.addAttribute(methodAttr);
-                //这一步会修改java的字节码
-                proxyService.writeFile(getResolverSearchPath());
                 try {
-                    Class api = proxyService.toClass();
-                } catch (CannotCompileException e) {
+                    //Class api = proxyService.toClass();
+                } catch (Exception e) {
                     System.out.println("target/classes 已加载该class ：" + getProxyPackageName(currentClass));
                 }
 
                 //生成到resolverSearchPath
+               // Class<?> aClass = proxyService.toClass();
                 proxyService.writeFile(getResolverSearchPath());
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
+       loaderClassSet(basePackage);
+
         return null;
     }
 }
