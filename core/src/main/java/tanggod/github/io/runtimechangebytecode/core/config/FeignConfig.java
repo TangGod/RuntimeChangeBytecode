@@ -1,4 +1,4 @@
-package tanggod.github.io.runtimechangebytecode.core;
+package tanggod.github.io.runtimechangebytecode.core.config;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -8,9 +8,10 @@ import javassist.bytecode.ClassFile;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.StringMemberValue;
-import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.cloud.openfeign.FeignClient;
-import tanggod.github.io.api.Proxy;
+import tanggod.github.io.common.annotation.FeignProxy;
+import tanggod.github.io.common.utils.PropertyUtil;
+import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,11 +28,14 @@ public class FeignConfig implements RuntimeChangeBytecode {
     public static final List<String> classNames = new ArrayList<>();
     public static final List<String> classFilePaths = new ArrayList<>();
 
+    public static String basePackage= PropertyUtil.getProperty("proxy.feign.basepackage");
+
     @Override
     public String createProxy(String basePackage, String resolverSearchPath) throws Exception {
+        basePackage=this.basePackage;
         Set<Class<?>> classes = loaderClassSet(basePackage);
         //过滤后的feign客户端class
-        classes = filterAnnotation(Proxy.class, classes);
+        classes = filterAnnotation(FeignProxy.class, classes);
 
         ClassPool classPool = ClassPool.getDefault();
 
@@ -39,9 +43,9 @@ public class FeignConfig implements RuntimeChangeBytecode {
             try {
                 packages.add(currentClass.getTypeName().replace("." + currentClass.getSimpleName(), ""));
                 classNames.add(getProxyName(currentClass));
-                classFilePaths.add(resolverSearchPath + "\\" + getProxyPackageName(currentClass).replace(".", "\\")+".class");
+                classFilePaths.add(getResolverSearchPath() + "\\" + getProxyPackageName(currentClass).replace(".", "\\")+".class");
 
-                Proxy annotation = currentClass.getAnnotation(Proxy.class);
+                FeignProxy annotation = currentClass.getAnnotation(FeignProxy.class);
                 //服务提供者 application.name
                 String providerApplicationName = annotation.value();
 
@@ -71,12 +75,12 @@ public class FeignConfig implements RuntimeChangeBytecode {
                 }
 
                 //生成到resolverSearchPath
-                proxyInterface.writeFile(resolverSearchPath);
+                proxyInterface.writeFile(getResolverSearchPath());
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
-        return resolverSearchPath + "\\tanggod\\github\\io\\ribbon\\Proxy$UserApi.class";
+        return null;
     }
 
     @Override
@@ -84,9 +88,4 @@ public class FeignConfig implements RuntimeChangeBytecode {
         return null;
     }
 
-    public static void main(String[] args) throws Exception {
-        FeignConfig feignConfig = new FeignConfig();
-        feignConfig.createProxy("tanggod", feignConfig.getResolverSearchPath());
-
-    }
 }

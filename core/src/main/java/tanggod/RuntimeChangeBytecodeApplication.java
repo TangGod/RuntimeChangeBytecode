@@ -1,25 +1,23 @@
 package tanggod;
 
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
+import org.springframework.cloud.netflix.hystrix.EnableHystrix;
 import org.springframework.cloud.openfeign.EnableFeignClients;
-import tanggod.github.io.runtimechangebytecode.core.FeignConfig;
-import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
+import tanggod.github.io.common.annotation.EnableFeignClientProxy;
+import tanggod.github.io.runtimechangebytecode.core.SpringCloudBootstrap;
 
 @EnableFeignClients
 @SpringBootApplication
 @EnableEurekaClient
-public class RuntimeChangeBytecodeApplication {
 
-	public static void main(String[] args) {
-		RuntimeChangeBytecode config = new FeignConfig();
-		try {
-			config.createProxy("tanggod",config.getResolverSearchPath());
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-		SpringApplication.run(RuntimeChangeBytecodeApplication.class, args);
+@EnableCircuitBreaker //开启服务降级 断路器
+@EnableHystrix
+@EnableFeignClientProxy//开启FeignClient代理
+public class RuntimeChangeBytecodeApplication extends SpringCloudBootstrap {
+
+	public static void main(String[] args) throws Exception {
+		run(RuntimeChangeBytecodeApplication.class,args);
 	}
 }

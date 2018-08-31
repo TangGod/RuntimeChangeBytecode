@@ -9,13 +9,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.ArrayList;
 import java.util.List;
 import tanggod.github.io.api.UserDto;
+import tanggod.github.io.common.annotation.FeignProxy;
+
 /*
  *
  *@author teddy
  *@date 2018/8/27
  */
 @RequestMapping("/user")
-@Proxy("user-provider")
+@FeignProxy("user-provider")
 public interface UserApi {
 
     @RequestMapping(value = "/list", method = RequestMethod.GET)
