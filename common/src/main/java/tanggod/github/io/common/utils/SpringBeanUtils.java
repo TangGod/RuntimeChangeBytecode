@@ -55,6 +55,12 @@ public final class SpringBeanUtils {
         return cfgContext.getBean(type);
     }
 
+    public <T> T getBean(String typeName,final Class<T> type) {
+        AssertUtils.notNull(type);
+        return cfgContext.getBean(typeName,type);
+    }
+
+
     /**
      * register bean in spring ioc.
      * @param beanName bean name

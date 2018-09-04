@@ -6,6 +6,7 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.netflix.hystrix.EnableHystrix;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import tanggod.github.io.common.annotation.EnableFeignClientProxy;
+import tanggod.github.io.runtimechangebytecode.core.ApplicationBootstrap;
 import tanggod.github.io.runtimechangebytecode.core.SpringCloudBootstrap;
 
 @EnableFeignClients
@@ -15,9 +16,9 @@ import tanggod.github.io.runtimechangebytecode.core.SpringCloudBootstrap;
 @EnableCircuitBreaker //开启服务降级 断路器
 @EnableHystrix
 @EnableFeignClientProxy//开启FeignClient代理
-public class RuntimeChangeBytecodeApplication extends SpringCloudBootstrap {
+public class RuntimeChangeBytecodeApplication   {
 
 	public static void main(String[] args) throws Exception {
-		run(RuntimeChangeBytecodeApplication.class,args);
+		ApplicationBootstrap.run(RuntimeChangeBytecodeApplication.class,args);
 	}
 }

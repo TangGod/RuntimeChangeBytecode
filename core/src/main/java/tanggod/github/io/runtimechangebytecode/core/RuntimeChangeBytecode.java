@@ -1,6 +1,11 @@
 package tanggod.github.io.runtimechangebytecode.core;
 
+import javassist.CtClass;
+import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.annotation.MemberValue;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import tanggod.github.io.common.annotation.Debug;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
@@ -23,6 +28,7 @@ import java.util.zip.ZipOutputStream;
 public interface RuntimeChangeBytecode {
 
     String proxyPrefix = "Proxy$";
+    String proxyPackage = "proxy";
 
     /**
      * 生成代理类
@@ -44,7 +50,6 @@ public interface RuntimeChangeBytecode {
 
     /**
      * 获取当前模块target下的classes文件夹的路径
-     *
      */
     default String getResolverSearchPath() {
         try {
@@ -58,6 +63,39 @@ public interface RuntimeChangeBytecode {
             return null;
         }
         return null;
+    }
+
+    static void clearTargetClasses() {
+        try {
+            File file = org.springframework.util.ResourceUtils.getFile("classpath:application.properties");
+            if (file.isFile()) {
+                String resolverSearchPath = file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf("\\"));
+                //递归删除
+                deleteFile(new File(resolverSearchPath));
+                System.out.println("==================================================== 代理类清空完毕 ====================================================");
+            }
+        } catch (Exception e) {
+        }
+    }
+
+    static void deleteFile(File classesFile) {
+        // 如果dir对应的文件不存在，则退出
+        if (!classesFile.exists())
+            return;
+        if (classesFile.isDirectory()) {
+            if (proxyPackage.equals(classesFile.getName())) {
+                try {
+                    FileUtils.deleteDirectory(classesFile);
+                    return;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            for (File file : classesFile.listFiles()) {
+                deleteFile(file);
+            }
+
+        }
     }
 
     /**
@@ -74,6 +112,50 @@ public interface RuntimeChangeBytecode {
             return "jar".equals(filterName);
         }).findFirst().get().getAbsolutePath();
 
+    }
+
+    /**
+     * 把老的class注解 copy到新的class中
+     *
+     * @param oldCtClass
+     * @param currentCtClass
+     * @param newAnnotation
+     */
+    default void copyClassAnnotationsAttribute(CtClass oldCtClass, CtClass currentCtClass, javassist.bytecode.annotation.Annotation... newAnnotation) {
+        //原先class的注解信息
+        AnnotationsAttribute oldClassAnnotation = (AnnotationsAttribute) oldCtClass.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
+        //构建一个新的 复制
+        AnnotationsAttribute currentClassAnnotation = new AnnotationsAttribute(currentCtClass.getClassFile().getConstPool(), AnnotationsAttribute.visibleTag);
+        javassist.bytecode.annotation.Annotation[] oldAnnotations;
+        if (null != oldClassAnnotation)
+            oldAnnotations = oldClassAnnotation.getAnnotations();
+        else {
+            oldAnnotations = new javassist.bytecode.annotation.Annotation[0];
+        }
+
+        javassist.bytecode.annotation.Annotation[] currentAnnotations = new javassist.bytecode.annotation.Annotation[oldAnnotations.length + newAnnotation.length];
+        int i = 0;
+        for (i = 0; i < oldAnnotations.length; i++) {
+            final int index = i;
+            Set<String> memberNames = oldAnnotations[index].getMemberNames();
+            javassist.bytecode.annotation.Annotation currentAnnotation = new javassist.bytecode.annotation.Annotation(oldAnnotations[index].getTypeName(), currentCtClass.getClassFile().getConstPool());
+            if (null != memberNames) {
+                memberNames.stream().forEach(keyName -> {
+                    MemberValue memberValue = oldAnnotations[index].getMemberValue(keyName);
+                    currentAnnotation.addMemberValue(keyName, memberValue);
+                });
+            }
+            currentAnnotations[i] = currentAnnotation;
+        }
+        //尾部追加新注解
+        int newAnnotationIndex = 0;
+        for (; i < currentAnnotations.length; i++) {
+            currentAnnotations[i] = newAnnotation[newAnnotationIndex++];
+        }
+
+        //insert Annotations
+        currentClassAnnotation.setAnnotations(currentAnnotations);
+        currentCtClass.getClassFile().addAttribute(currentClassAnnotation);
     }
 
     /**
@@ -226,12 +308,37 @@ public interface RuntimeChangeBytecode {
      * @return
      */
     default Set<Class<?>> filterAnnotation(Class annotation, Set<Class<?>> classes) {
+        classes = filterDebug(classes);
         Set<Class<?>> filterAnnotation = new HashSet<>();
         for (Class data : classes) {
             if (data.isAnnotationPresent(annotation))
                 filterAnnotation.add(data);
         }
         return filterAnnotation;
+    }
+
+    default Set<Class<?>> filterDebug(Set<Class<?>> classes) {
+        Set<Class<?>> filterDebug = new HashSet<>();
+        for (Class data : classes) {
+            if (!data.isAnnotationPresent(Debug.class))
+                filterDebug.add(data);
+        }
+        return filterDebug;
+    }
+
+    /**
+     * 过滤并获取代理类
+     *
+     * @param classes
+     * @return
+     */
+    default Set<Class<?>> filterProxy(Set<Class<?>> classes) {
+        Set<Class<?>> filterProxy = new HashSet<>();
+        for (Class data : classes) {
+            if (data.getName().contains(proxyPrefix))
+                filterProxy.add(data);
+        }
+        return filterProxy;
     }
 
     /**
@@ -252,7 +359,7 @@ public interface RuntimeChangeBytecode {
      */
     default String getProxyPackageName(Class cla) {
         String typePackageName = cla.getTypeName();
-        return typePackageName.replace(cla.getSimpleName(), getProxyName(cla));
+        return typePackageName.replace(cla.getSimpleName(), proxyPackage + "." + getProxyName(cla));
     }
 
     /**
@@ -318,7 +425,7 @@ public interface RuntimeChangeBytecode {
 
         if (!has) {
             //最后添加
-            JarEntry newEntry = new JarEntry("BOOT-INF\\classes\\" + installPath.replace(".","\\") + "\\" + entryName);
+            JarEntry newEntry = new JarEntry("BOOT-INF\\classes\\" + installPath.replace(".", "\\") + "\\" + entryName);
             jos.putNextEntry(newEntry);
             jos.write(data, 0, data.length);
         }

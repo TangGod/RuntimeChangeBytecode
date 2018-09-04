@@ -3,7 +3,7 @@
 // (powered by Fernflower decompiler)
 //
 
-package tanggod.github.io.provider;
+package tanggod.github.io.provider.service;
 
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
@@ -13,17 +13,27 @@ import java.util.function.Predicate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import tanggod.github.io.api.UserApi;
 import tanggod.github.io.api.UserDto;
+import tanggod.github.io.api.UserSpi;
+import tanggod.github.io.common.annotation.Debug;
 import tanggod.github.io.common.annotation.ServerFallbackProxy;
 import tanggod.github.io.common.dto.BaseBean;
 import tanggod.github.io.common.dto.MessageBean;
 import tanggod.github.io.common.utils.BaseService;
+import tanggod.github.io.provider.controller.UserController;
 
-@Service
+//@Service
 @ServerFallbackProxy(
         resultType = MessageBean.class
 )
-public class UserApiService extends BaseService {
+//@Debug
+public class UserApiService extends BaseService implements UserSpi {
+
+    private UserController t1;
+    public UserController t2;
+    private UserController t3;
+
     public UserApiService() {
     }
 
@@ -56,7 +66,7 @@ public class UserApiService extends BaseService {
         return null;
     }
 
-    public BaseBean create(@RequestBody UserDto userDto) {
+    public BaseBean create(/*@*/ UserDto userDto) {
         System.out.println(userDto.getAddress());
         System.out.println(userDto.getId());
         System.out.println(userDto.getIp());

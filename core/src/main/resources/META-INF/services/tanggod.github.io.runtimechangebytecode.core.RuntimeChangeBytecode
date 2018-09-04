@@ -1,2 +1,3 @@
 tanggod.github.io.runtimechangebytecode.core.config.FeignConfig
 tanggod.github.io.runtimechangebytecode.core.config.HystrixConfig
+tanggod.github.io.runtimechangebytecode.core.config.SpringMVCConfig
