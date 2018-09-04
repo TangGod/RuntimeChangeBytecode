@@ -58,6 +58,12 @@ public class HystrixConfig implements RuntimeChangeBytecode {
                 ServerFallbackProxy serverFallbackProxy = currentClass.getAnnotation(ServerFallbackProxy.class);
                 String methodName = serverFallbackProxy.methodName();
                 String resultType = serverFallbackProxy.fallbackSource().getDeclaredField(methodName).getType().getTypeName();
+                Class component = serverFallbackProxy.component();
+                //添加注解
+                if (!Class.class.getTypeName().equals(component.getTypeName())) {
+                    Annotation annotation = new Annotation(component.getTypeName(), constPool);
+                    copyClassAnnotationsAttribute(proxyService, proxyService, annotation);
+                }
 
                 CtField fallbackAttr = CtField.make("private " + serverFallbackProxy.fallbackSource().getTypeName() + " " + fallbackFieldName + " = new " + serverFallbackProxy.fallbackSource().getTypeName() + "();", proxyService);
                 proxyService.addField(fallbackAttr);

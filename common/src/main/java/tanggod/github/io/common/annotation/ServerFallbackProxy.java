@@ -10,6 +10,8 @@ public @interface ServerFallbackProxy {
     //返回值类型
     //Class resultType();
 
+    Class component() default Class.class;
+
     //返回值的数据源
     Class fallbackSource();
 
