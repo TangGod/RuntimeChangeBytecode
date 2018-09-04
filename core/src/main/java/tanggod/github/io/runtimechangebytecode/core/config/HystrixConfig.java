@@ -3,10 +3,7 @@ package tanggod.github.io.runtimechangebytecode.core.config;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.netflix.hystrix.contrib.javanica.conf.HystrixPropertiesManager;
-import javassist.CannotCompileException;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtMethod;
+import javassist.*;
 import javassist.bytecode.*;
 import javassist.bytecode.annotation.*;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -24,10 +21,7 @@ import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
 import java.io.FileInputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /*
@@ -46,7 +40,8 @@ public class HystrixConfig implements RuntimeChangeBytecode {
         //过滤后的feign客户端class
         classes = filterAnnotation(ServerFallbackProxy.class, classes);
         ClassPool classPool = ClassPool.getDefault();
-
+        String methodFallbackPre = "fallback_";
+        String fallbackFieldName = proxyPrefix + "fallback";
 
         classes.stream().forEach(currentClass -> {
             try {
@@ -57,14 +52,15 @@ public class HystrixConfig implements RuntimeChangeBytecode {
                 //constPool
                 ConstPool constPool = classFile.getConstPool();
 
-                CtMethod[] methods = proxyService.getMethods();
-                CtMethod method = Arrays.stream(methods).filter(currentMethod -> currentMethod.getName().equals("get")).findFirst().get();
-                MethodInfo methodInfo = method.getMethodInfo();
+                CtMethod[] methods = proxyService.getDeclaredMethods();
 
-                //构建注解
-                AnnotationsAttribute methodAttr = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
-                Annotation hystrixCommand = new Annotation(HystrixCommand.class.getTypeName(), constPool);
-                hystrixCommand.addMemberValue("fallbackMethod", new StringMemberValue("fallback", constPool));
+                //构建fallback的属性
+                ServerFallbackProxy serverFallbackProxy = currentClass.getAnnotation(ServerFallbackProxy.class);
+                String methodName = serverFallbackProxy.methodName();
+                String resultType = serverFallbackProxy.fallbackSource().getDeclaredField(methodName).getType().getTypeName();
+
+                CtField fallbackAttr = CtField.make("private " + serverFallbackProxy.fallbackSource().getTypeName() + " " + fallbackFieldName + " = new " + serverFallbackProxy.fallbackSource().getTypeName() + "();", proxyService);
+                proxyService.addField(fallbackAttr);
 
                 //注解里包含注解
                 //默认10秒;如果并发数达到该设置值，请求会被拒绝和抛出异常并且fallback不会被调用。
@@ -76,14 +72,104 @@ public class HystrixConfig implements RuntimeChangeBytecode {
 
                 //hystrixCommand.addMemberValue("commandProperties", new AnnotationMemberValue(hystrixProperty, constPool));
 
-                //要改成添加 数组的 注解  不然会被覆盖
-                methodAttr.setAnnotations(new Annotation[]{hystrixCommand});
+                Method[] declaredMethods = currentClass.getDeclaredMethods();
+                //创建fallback方法
+                for (int i = 0; i < declaredMethods.length; i++) {
+                    //生成注解
+                    CtMethod ctMethod = methods[i];
+                    MethodInfo ctMethodInfo = ctMethod.getMethodInfo();
 
-                //给方法添加上注解
-                methodInfo.addAttribute(methodAttr);
+                    //构建注解
+                    AnnotationsAttribute methodAttr = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
+                    Annotation hystrixCommand = new Annotation(HystrixCommand.class.getTypeName(), constPool);
+                    hystrixCommand.addMemberValue("fallbackMethod", new StringMemberValue(methodFallbackPre + ctMethod.getName(), constPool));
 
-                CtMethod newMethod = methods[0];
+                    ArrayMemberValue arrayMemberValue = new ArrayMemberValue(constPool);
+                    arrayMemberValue.setValue(new AnnotationMemberValue[]{new AnnotationMemberValue(hystrixProperty, constPool)});
 
+                    hystrixCommand.addMemberValue("commandProperties", arrayMemberValue);
+                    //methodAttr.setAnnotations(new Annotation[]{hystrixCommand});
+                    //ctMethodInfo.addAttribute(methodAttr);
+
+                    copyMethodAnnotationsAttribute(ctMethod, ctMethod, hystrixCommand);
+
+                    Method method = declaredMethods[i];
+                    StringBuilder methodSrc = new StringBuilder();
+                    //参数注解
+                    java.lang.annotation.Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+                    //修饰符
+                    String modifier = Modifier.toString(method.getModifiers());
+                    //返回值
+                    String typeName = method.getReturnType().getTypeName();
+                    //方法名
+                    String name = methodFallbackPre + method.getName();
+                    //参数列表
+                    Class<?>[] parameterTypes = method.getParameterTypes();
+                    StringBuilder parameterTypeSrc = new StringBuilder();
+                    StringBuilder methodInvokeParameter = new StringBuilder();
+                    //构建参数列表
+                    for (int j = 0; j < parameterTypes.length; j++) {
+                        Class<?> parameterType = parameterTypes[j];
+                        String paramTypeName = parameterType.getTypeName();
+                        //获取参数注解(默认是获取一个)
+                        String annotationTypeName = "";
+                        java.lang.annotation.Annotation[] annotations = parameterAnnotations[j];
+                        for (int annotationIndex = 0; annotationIndex < annotations.length; annotationIndex++) {
+                            java.lang.annotation.Annotation annotation = annotations[annotationIndex];
+                            //annotationTypeName = annotation.annotationType().getTypeName();
+                            annotationTypeName = "@" + annotation.annotationType().getTypeName();
+                        }
+
+                        parameterTypeSrc
+                                // .append(annotationTypeName)
+                                .append(" ")
+                                .append(paramTypeName)
+                                .append(" ")
+                                .append("var" + j);
+                        methodInvokeParameter.append("var" + j);
+                        if (j != parameterTypes.length - 1) {
+                            parameterTypeSrc.append(",");
+                            methodInvokeParameter.append(",");
+                        }
+                    }
+                    //构建方法调用
+                    StringBuilder methodInvoke = new StringBuilder();
+                    //方法有返回值 并且返回值为注解的resultType类型
+                    if (typeName.equals(resultType)) {
+                        methodInvoke.append("return")
+                                .append(" ")
+                                .append(fallbackFieldName)
+                                .append(".")
+                                .append(methodName)
+                                .append("();");
+                    } else if ("void".equals(typeName)) {//方法没有返回值
+                        methodInvoke.append("return ;");
+                    } else {//方法有返回值 并且返回值为未知
+                        methodInvoke.append("return null;");
+                    }
+
+                    methodSrc.append(modifier)
+                            .append(" ")
+                            .append(typeName)
+                            .append(" ")
+                            .append(name)
+                            .append(" ")
+                            .append("(")
+                            .append(parameterTypeSrc)
+                            .append(")")
+                            .append("{")
+                            .append("\n")
+                            .append(methodInvoke)
+                            .append("\n")
+                            .append("}")
+                            .append("");
+
+
+                    //System.out.println(methodSrc.toString());
+                    //System.out.println("==============================================");
+                    CtMethod makeMethod = CtMethod.make(methodSrc.toString(), proxyService);
+                    proxyService.addMethod(makeMethod);
+                }
 
                 Class api;
                 try {

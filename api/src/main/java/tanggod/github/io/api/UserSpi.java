@@ -20,7 +20,7 @@ public interface UserSpi {
 
     MessageBean get();
 
-    BaseBean getById(@RequestParam("id") String id);
+    MessageBean getById(@RequestParam("id") String id);
 
-    BaseBean create(@RequestBody UserDto userDto);
+    MessageBean create(@RequestBody UserDto userDto);
 }

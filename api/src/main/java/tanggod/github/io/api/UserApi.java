@@ -29,10 +29,10 @@ public interface UserApi {
     MessageBean get();
 
     @RequestMapping(value = "/getById", method = RequestMethod.GET)
-    BaseBean getById(@RequestParam("id") String id);
+    MessageBean getById(@RequestParam("id") String id);
 
     @RequestMapping(value = "/create", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
-    BaseBean create(@RequestBody UserDto userDto);
+    MessageBean create(@RequestBody UserDto userDto);
 
 
 

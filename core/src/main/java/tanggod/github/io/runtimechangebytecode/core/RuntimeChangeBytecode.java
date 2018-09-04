@@ -1,6 +1,7 @@
 package tanggod.github.io.runtimechangebytecode.core;
 
 import javassist.CtClass;
+import javassist.CtMethod;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.annotation.MemberValue;
 import org.apache.commons.io.FileUtils;
@@ -156,6 +157,50 @@ public interface RuntimeChangeBytecode {
         //insert Annotations
         currentClassAnnotation.setAnnotations(currentAnnotations);
         currentCtClass.getClassFile().addAttribute(currentClassAnnotation);
+    }
+
+    /**
+     * 把老的method注解 copy到新的method中
+     *
+     * @param oldCtClass
+     * @param currentCtClass
+     * @param newAnnotation
+     */
+    default void copyMethodAnnotationsAttribute(CtMethod oldMethod, CtMethod currentCtMethod, javassist.bytecode.annotation.Annotation... newAnnotation) {
+        //原先class的注解信息
+        AnnotationsAttribute oldClassAnnotation = (AnnotationsAttribute) oldMethod.getMethodInfo().getAttribute(AnnotationsAttribute.visibleTag);
+        //构建一个新的 复制
+        AnnotationsAttribute currentClassAnnotation = new AnnotationsAttribute(currentCtMethod.getMethodInfo().getConstPool(), AnnotationsAttribute.visibleTag);
+        javassist.bytecode.annotation.Annotation[] oldAnnotations;
+        if (null != oldClassAnnotation)
+            oldAnnotations = oldClassAnnotation.getAnnotations();
+        else {
+            oldAnnotations = new javassist.bytecode.annotation.Annotation[0];
+        }
+
+        javassist.bytecode.annotation.Annotation[] currentAnnotations = new javassist.bytecode.annotation.Annotation[oldAnnotations.length + newAnnotation.length];
+        int i = 0;
+        for (i = 0; i < oldAnnotations.length; i++) {
+            final int index = i;
+            Set<String> memberNames = oldAnnotations[index].getMemberNames();
+            javassist.bytecode.annotation.Annotation currentAnnotation = new javassist.bytecode.annotation.Annotation(oldAnnotations[index].getTypeName(), currentCtMethod.getMethodInfo().getConstPool());
+            if (null != memberNames) {
+                memberNames.stream().forEach(keyName -> {
+                    MemberValue memberValue = oldAnnotations[index].getMemberValue(keyName);
+                    currentAnnotation.addMemberValue(keyName, memberValue);
+                });
+            }
+            currentAnnotations[i] = currentAnnotation;
+        }
+        //尾部追加新注解
+        int newAnnotationIndex = 0;
+        for (; i < currentAnnotations.length; i++) {
+            currentAnnotations[i] = newAnnotation[newAnnotationIndex++];
+        }
+
+        //insert Annotations
+        currentClassAnnotation.setAnnotations(currentAnnotations);
+        currentCtMethod.getMethodInfo().addAttribute(currentClassAnnotation);
     }
 
     /**

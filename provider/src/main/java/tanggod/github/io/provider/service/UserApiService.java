@@ -21,12 +21,11 @@ import tanggod.github.io.common.annotation.ServerFallbackProxy;
 import tanggod.github.io.common.dto.BaseBean;
 import tanggod.github.io.common.dto.MessageBean;
 import tanggod.github.io.common.utils.BaseService;
+import tanggod.github.io.provider.FallBack;
 import tanggod.github.io.provider.controller.UserController;
 
 //@Service
-@ServerFallbackProxy(
-        resultType = MessageBean.class
-)
+@ServerFallbackProxy(fallbackSource = FallBack.class)
 //@Debug
 public class UserApiService extends BaseService implements UserSpi {
 
@@ -58,15 +57,18 @@ public class UserApiService extends BaseService implements UserSpi {
         return this.result(((List)this.list().getData()).get(0));
     }
 
-    public MessageBean fallback() {
-        return this.result("请求错误");
+    public void test1() {
+        return ;
     }
-
-    public BaseBean getById(@RequestParam("id") String id) {
+    public BaseBean test2() {
         return null;
     }
 
-    public BaseBean create(/*@*/ UserDto userDto) {
+    public MessageBean getById(@RequestParam("id") String id) {
+        return null;
+    }
+
+    public MessageBean create(/*@*/ UserDto userDto) {
         System.out.println(userDto.getAddress());
         System.out.println(userDto.getId());
         System.out.println(userDto.getIp());

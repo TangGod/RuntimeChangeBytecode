@@ -8,10 +8,13 @@ import java.lang.annotation.*;
 public @interface ServerFallbackProxy {
 
     //返回值类型
-    Class resultType();
+    //Class resultType();
 
-    //如果返回的是Bean 则为字段名
-    String fieldName() default "";
+    //返回值的数据源
+    Class fallbackSource();
+
+    //数据源中的获取返回值的方法名
+    String methodName() default "result";
 
     //触发服务降级时，返回的值  此方法的返回值必须与原方法一致
     String fallbackValue() default "系统繁忙，请稍后再试";
