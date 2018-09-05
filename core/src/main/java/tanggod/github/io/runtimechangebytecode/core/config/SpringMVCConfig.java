@@ -3,10 +3,7 @@ package tanggod.github.io.runtimechangebytecode.core.config;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import com.netflix.hystrix.contrib.javanica.conf.HystrixPropertiesManager;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtField;
-import javassist.CtMethod;
+import javassist.*;
 import javassist.bytecode.*;
 import javassist.bytecode.annotation.*;
 import org.apache.commons.lang.StringUtils;
@@ -21,8 +18,10 @@ import tanggod.github.io.common.dto.MessageBean;
 import tanggod.github.io.common.utils.PropertyUtil;
 import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 /*
@@ -184,6 +183,136 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
 
     @Override
     public String createChangeProxy(String basePackage, String resolverSearchPath) throws Exception {
+        ClassPool classPool = ClassPool.getDefault();
+        Set<String> classes = new HashSet<>();
+
+        //-1 ：controller    class:@Service   field:@Autowired
+        scanClasses(new File(getResolverSearchPath()), baseServicePackage, classes);
+
+        getSacnClasses.addAll(classes);
+
+        classes.stream().forEach(classFullyQualifiedName -> {
+            try {
+                CtClass currentCtClass = classPool.get(classFullyQualifiedName);
+
+                //当前class
+                ClassFile classFile = currentCtClass.getClassFile();
+                //constPool
+                ConstPool constPool = classFile.getConstPool();
+
+                //类添加注解
+                if (!currentCtClass.hasAnnotation(Service.class)) {
+                    Annotation service = new Annotation(Service.class.getTypeName(), constPool);
+                    service.addMemberValue("value", new StringMemberValue(currentCtClass.getSimpleName(), constPool));
+                    copyClassAnnotationsAttribute(currentCtClass, currentCtClass, service);
+                }
+
+                //属性添加注解
+                Annotation autowired = new Annotation(Autowired.class.getTypeName(), constPool);
+                autowired.addMemberValue("required", new BooleanMemberValue(false, constPool));
+
+                CtField[] declaredFields = currentCtClass.getDeclaredFields();
+                for (int i = 0; i < declaredFields.length; i++) {
+                    CtField declaredField = declaredFields[i];
+                    if (declaredField.hasAnnotation(Autowired.class))
+                        continue;
+                    AnnotationsAttribute fieldAttr = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
+                    FieldInfo fieldInfo = declaredField.getFieldInfo();
+                    fieldAttr.addAnnotation(autowired);
+                    fieldInfo.addAttribute(fieldAttr);
+                }
+
+                try {
+                    //Class api = currentCtClass.toClass();
+                    //currentCtClass.writeFile(getResolverSearchPath());
+                } catch (Exception e) {
+                    System.out.println("target/classes 已加载该class ：" + currentCtClass.getName());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+
+        //-2 ：controller    class:@RestController   field:@Autowired   method: @RequestMapping
+
+        classes.clear();
+        scanClasses(new File(getResolverSearchPath()), baseControllerPackage, classes);
+
+        getSacnClasses.addAll(classes);
+
+        classes.stream().forEach(classFullyQualifiedName -> {
+            try {
+                CtClass currentCtClass = classPool.get(classFullyQualifiedName);
+                //当前class
+                ClassFile classFile = currentCtClass.getClassFile();
+                //constPool
+                ConstPool constPool = classFile.getConstPool();
+
+                //类添加注解
+                if (!currentCtClass.hasAnnotation(RestController.class)) {
+                    Annotation controller = new Annotation(RestController.class.getTypeName(), constPool);
+                    controller.addMemberValue("value", new StringMemberValue(currentCtClass.getSimpleName(), constPool));
+                    copyClassAnnotationsAttribute(currentCtClass, currentCtClass, controller);
+                }
+
+                //属性添加注解
+                Annotation autowired = new Annotation(Autowired.class.getTypeName(), constPool);
+                autowired.addMemberValue("required", new BooleanMemberValue(false, constPool));
+
+                CtField[] declaredFields = currentCtClass.getDeclaredFields();
+                for (int i = 0; i < declaredFields.length; i++) {
+                    CtField declaredField = declaredFields[i];
+                    if (declaredField.hasAnnotation(Autowired.class))
+                        continue;
+                    AnnotationsAttribute fieldAttr = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
+                    FieldInfo fieldInfo = declaredField.getFieldInfo();
+                    fieldAttr.addAnnotation(autowired);
+                    fieldInfo.addAttribute(fieldAttr);
+                }
+
+
+                //method
+                CtMethod[] methods = currentCtClass.getDeclaredMethods();
+                for (int i = 0; i < methods.length; i++) {
+                    CtMethod method = methods[i];
+                    if (method.hasAnnotation(RequestMapping.class))
+                        continue;
+
+                    String methodName = method.getName();
+                    RequestMethod requestMethod = getRequestMethod(methodName);
+                    if (null == requestMethod)
+                        continue;
+
+                    String requestMappingValue = getRequestMapping(requestMethod, methodName);
+                    //requestmapping
+                    Annotation requestMapping = new Annotation(RequestMapping.class.getTypeName(), constPool);
+                    ArrayMemberValue valueAmv = new ArrayMemberValue(constPool);
+                    valueAmv.setValue(new StringMemberValue[]{new StringMemberValue(requestMappingValue, constPool)});
+                    requestMapping.addMemberValue("value", valueAmv);
+
+                    ArrayMemberValue methodAmv = new ArrayMemberValue(constPool);
+                    EnumMemberValue enumMemberValue = new EnumMemberValue(constPool);
+                    enumMemberValue.setType(RequestMethod.class.getTypeName());
+                    enumMemberValue.setValue(requestMethod.name());
+                    methodAmv.setValue(new EnumMemberValue[]{enumMemberValue});
+                    requestMapping.addMemberValue("method", methodAmv);
+                    copyMethodAnnotationsAttribute(method, method, requestMapping);
+                }
+
+
+                //end
+                try {
+                    //Class api = currentCtClass.toClass();
+                    //currentCtClass.writeFile(getResolverSearchPath());
+                } catch (Exception e) {
+                    System.out.println("target/classes 已加载该class ：" + currentCtClass.getName());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        });
 
 
         return null;
@@ -206,7 +335,15 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
     private String getRequestMapping(RequestMethod requestMethod, String methodName) {
         String method = methodName.replaceFirst(requestMethod.name().toLowerCase(), "");
         String oldInitial = method.substring(0, 1);
-        String newInitial=oldInitial.toLowerCase();
-        return method.replaceFirst(oldInitial,newInitial);
+        String newInitial = oldInitial.toLowerCase();
+        return method.replaceFirst(oldInitial, newInitial);
+    }
+
+
+    private static final Set<String> getSacnClasses = new HashSet<>();
+
+    @Override
+    public Set<String> getSacnClasses() {
+        return this.getSacnClasses;
     }
 }

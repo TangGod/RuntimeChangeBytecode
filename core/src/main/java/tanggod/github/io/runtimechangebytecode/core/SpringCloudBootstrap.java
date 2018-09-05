@@ -47,15 +47,20 @@ public class SpringCloudBootstrap implements ApplicationBootstrap, ApplicationCo
     }
 
     private void initializeProxy(List<? extends RuntimeChangeBytecode> runtimeChangeBytecodeList) throws Exception {
+        RuntimeChangeBytecode hystrixConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, HystrixConfig.class)).findFirst().orElse(null);
+        if (null != hystrixConfig)
+            hystrixConfig.createChangeProxy(null, null);
+        RuntimeChangeBytecode springMVCConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, SpringMVCConfig.class)).findFirst().orElse(null);
+        if (null != springMVCConfig)
+            springMVCConfig.createChangeProxy(null, null);
+
+        //生成
+        RuntimeChangeBytecode.writeFile(hystrixConfig, springMVCConfig);
+
         RuntimeChangeBytecode feignConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, FeignConfig.class)).findFirst().orElse(null);
         if (null != feignConfig)
             feignConfig.createProxy(null, null);
-        RuntimeChangeBytecode hystrixConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, HystrixConfig.class)).findFirst().orElse(null);
-        if (null != hystrixConfig)
-            hystrixConfig.createProxy(null, null);
-        RuntimeChangeBytecode springMVCConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, SpringMVCConfig.class)).findFirst().orElse(null);
-        if (null != springMVCConfig)
-            springMVCConfig.createProxy(null, null);
+
     }
 
     private <S> void loadSpiSupport(Class<?> primarySource) {

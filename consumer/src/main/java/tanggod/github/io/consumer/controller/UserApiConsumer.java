@@ -9,6 +9,7 @@ import tanggod.github.io.api.UserDto;
 import tanggod.github.io.common.annotation.ServerFallbackProxy;
 import tanggod.github.io.common.dto.MessageBean;
 import tanggod.github.io.consumer.FallBack;
+import tanggod.github.io.consumer.service.UserApiService;
 
 import java.util.List;
 
@@ -17,13 +18,15 @@ import java.util.List;
  *@author teddy
  *@date 2018/9/4
  */
-@ServerFallbackProxy(fallbackSource = FallBack.class/*,component = RestController.class*/)
+//@ServerFallbackProxy(fallbackSource = FallBack.class/*,component = RestController.class*/)
 public class UserApiConsumer {
 
     private UserApi userApi;
 
+    private UserApiService userApiService;
+
     public MessageBean getList() {
-        MessageBean<List<UserDto>> list = userApi.list();
+        MessageBean<List<UserDto>> list = userApiService.list();
         return list;
     }
 

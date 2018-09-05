@@ -14,6 +14,7 @@ import tanggod.github.io.common.utils.PropertyUtil;
 import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -29,11 +30,11 @@ public class FeignConfig implements RuntimeChangeBytecode {
     public static final List<String> classNames = new ArrayList<>();
     public static final List<String> classFilePaths = new ArrayList<>();
 
-    public static String basePackage= PropertyUtil.getProperty("proxy.feign.basepackage");
+    public static String basePackage = PropertyUtil.getProperty("proxy.feign.basepackage");
 
     @Override
     public String createProxy(String basePackage, String resolverSearchPath) throws Exception {
-        basePackage=this.basePackage;
+        basePackage = this.basePackage;
         Set<Class<?>> classes = loaderClassSet(basePackage);
         //过滤后的feign客户端class
         classes = filterAnnotation(FeignProxy.class, classes);
@@ -44,7 +45,7 @@ public class FeignConfig implements RuntimeChangeBytecode {
             try {
                 packages.add(currentClass.getTypeName().replace("." + currentClass.getSimpleName(), ""));
                 classNames.add(getProxyName(currentClass));
-                classFilePaths.add(getResolverSearchPath() + "\\" + getProxyPackageName(currentClass).replace(".", "\\")+".class");
+                classFilePaths.add(getResolverSearchPath() + "\\" + getProxyPackageName(currentClass).replace(".", "\\") + ".class");
 
                 FeignProxy annotation = currentClass.getAnnotation(FeignProxy.class);
                 //服务提供者 application.name
@@ -89,4 +90,10 @@ public class FeignConfig implements RuntimeChangeBytecode {
         return null;
     }
 
+    private static final Set<String> getSacnClasses = new HashSet<>();
+
+    @Override
+    public Set<String> getSacnClasses() {
+        return this.getSacnClasses;
+    }
 }

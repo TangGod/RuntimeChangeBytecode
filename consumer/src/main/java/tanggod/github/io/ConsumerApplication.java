@@ -4,6 +4,7 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.NotFoundException;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
@@ -18,9 +19,16 @@ import tanggod.github.io.common.annotation.EnableFeignClientProxy;
 import tanggod.github.io.common.annotation.EnableServerFallbackProxy;
 import tanggod.github.io.common.annotation.EnableSpringMVCProxy;
 import tanggod.github.io.runtimechangebytecode.core.ApplicationBootstrap;
+import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
 import tanggod.github.io.runtimechangebytecode.core.SpringCloudBootstrap;
+import tanggod.github.io.runtimechangebytecode.core.config.SpringMVCConfig;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,12 +36,16 @@ import java.util.regex.Pattern;
 @SpringBootApplication
 @EnableEurekaClient
 @EnableCircuitBreaker
-//@EnableFeignClientProxy
-//@EnableServerFallbackProxy
+@EnableFeignClientProxy
+@EnableServerFallbackProxy
 @EnableSpringMVCProxy
 public class ConsumerApplication {
 
 	public static void main(String[] args){
 		ApplicationBootstrap.run(ConsumerApplication.class, args);
+
 	}
+
+
+
 }

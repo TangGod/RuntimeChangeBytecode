@@ -1,12 +1,15 @@
 package tanggod.github.io.runtimechangebytecode.core;
 
+import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
+import javassist.NotFoundException;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.annotation.MemberValue;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import tanggod.github.io.common.annotation.Debug;
+import tanggod.github.io.runtimechangebytecode.core.config.SpringMVCConfig;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
@@ -18,6 +21,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.zip.ZipOutputStream;
 
 /*
@@ -50,6 +54,43 @@ public interface RuntimeChangeBytecode {
     String createChangeProxy(String basePackage, String resolverSearchPath) throws Exception;
 
     /**
+     * 获取要修改的所有class
+     *
+     * @return
+     */
+    Set<String> getSacnClasses();
+
+
+    static void writeFile(RuntimeChangeBytecode... runtimeChangeBytecodes) {
+        if (runtimeChangeBytecodes.length == 0)
+            return;
+        List<RuntimeChangeBytecode> runtimeChangeBytecodeList = new ArrayList<>();
+        for (int i = 0; i < runtimeChangeBytecodes.length; i++) {
+            if (null != runtimeChangeBytecodes[i])
+                runtimeChangeBytecodeList.add(runtimeChangeBytecodes[i]);
+        }
+
+        String resolverSearchPath = getResolverSearchPath2();
+        ClassPool classPool = ClassPool.getDefault();
+        Set<String> sacnClasses = new HashSet<>();
+        runtimeChangeBytecodeList.forEach(runtimeChangeBytecode -> {
+            Set<String> sacnClassesSet = runtimeChangeBytecode.getSacnClasses();
+            if (null != sacnClassesSet)
+                sacnClasses.addAll(sacnClassesSet);
+        });
+
+        sacnClasses.stream().forEach(classFullyQualifiedName -> {
+            try {
+                CtClass api = classPool.get(classFullyQualifiedName);
+                api.writeFile(resolverSearchPath);
+                System.out.println("proxy：" + api.getSimpleName());
+            } catch (Exception e) {
+                System.out.println("target/classes 已加载该class ：" + classFullyQualifiedName);
+            }
+        });
+    }
+
+    /**
      * 获取当前模块target下的classes文件夹的路径
      */
     default String getResolverSearchPath() {
@@ -64,6 +105,46 @@ public interface RuntimeChangeBytecode {
             return null;
         }
         return null;
+    }
+
+    static String getResolverSearchPath2() {
+        try {
+            File file = org.springframework.util.ResourceUtils.getFile("classpath:application.properties");
+            if (file.isFile()) {
+                String resolverSearchPath = file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf("\\"));
+                return resolverSearchPath;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return null;
+    }
+
+    /**
+     * 扫描target目录下指定包的classes
+     *
+     * @param classesFile 传递target目录下classes的路径 :getResolverSearchPath()
+     * @param basePackage 要扫描的包名
+     * @param classes     存classes的集合,必须实例化
+     */
+    default void scanClasses(File classesFile, String basePackage, Collection<String> classes) {
+        if (null == classes)
+            return;
+        // 如果dir对应的文件不存在，则退出
+        if (!classesFile.exists())
+            return;
+        if (classesFile.isDirectory()) {
+            for (File file : classesFile.listFiles()) {
+                scanClasses(file, basePackage, classes);
+            }
+        } else if (classesFile.getAbsolutePath().contains(basePackage.replace(".", "\\"))) {
+            String classPackage = classesFile.getAbsolutePath().replace(getResolverSearchPath(), "").replace("\\", ".").replace(".class", "");
+            classPackage = classPackage.substring(1);
+            classes.add(classPackage);
+            System.out.println(classPackage);
+
+        }
     }
 
     static void clearTargetClasses() {
@@ -359,6 +440,27 @@ public interface RuntimeChangeBytecode {
             if (data.isAnnotationPresent(annotation))
                 filterAnnotation.add(data);
         }
+        return filterAnnotation;
+    }
+
+    /**
+     * 过滤掉不包含注解的class
+     *
+     * @param annotation
+     * @param classes
+     * @param classPool
+     * @return
+     */
+    default Collection<String> filterAnnotation(Class annotation, Collection<String> classes, ClassPool classPool) {
+        Set<String> filterAnnotation = new HashSet<>();
+        classes.stream().forEach(classFullyQualifiedName -> {
+            try {
+                if (classPool.get(classFullyQualifiedName).hasAnnotation(annotation))
+                    filterAnnotation.add(classFullyQualifiedName);
+            } catch (NotFoundException e) {
+                e.printStackTrace();
+            }
+        });
         return filterAnnotation;
     }
 

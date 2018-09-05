@@ -18,6 +18,7 @@ import tanggod.github.io.common.type.ApplicationCache;
 import tanggod.github.io.common.utils.PropertyUtil;
 import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -209,7 +210,68 @@ public class HystrixConfig implements RuntimeChangeBytecode {
 
     @Override
     public String createChangeProxy(String basePackage, String resolverSearchPath) throws Exception {
+        basePackage = this.basePackage;
+        Set<String> classes = new HashSet<>();
+        ClassPool classPool = ClassPool.getDefault();
+
+        scanClasses(new File(getResolverSearchPath()), basePackage, classes);
+
+        getSacnClasses.addAll(classes);
+
+        //过滤后的feign客户端class
+        classes = filterAnnotation(ServerFallbackProxy.class, classes, classPool).stream().collect(Collectors.toSet());
+        String methodFallbackPre = "fallback_";
+        String fallbackFieldName = proxyPrefix + "fallback";
+
+        classes.stream().forEach(classFullyQualifiedName -> {
+            try {
+                //构建一个代理接口
+                CtClass currentCtClass = classPool.get(classFullyQualifiedName);
+                //代理的class
+                ClassFile classFile = currentCtClass.getClassFile();
+                //constPool
+                ConstPool constPool = classFile.getConstPool();
+
+                CtMethod[] methods = currentCtClass.getDeclaredMethods();
+
+                //构建fallback的属性
+                ServerFallbackProxy serverFallbackProxy = (ServerFallbackProxy) currentCtClass.getAnnotation(ServerFallbackProxy.class);
+                String methodName = serverFallbackProxy.methodName();
+                String resultType = serverFallbackProxy.fallbackSource().getDeclaredField(methodName).getType().getTypeName();
+                Class component = serverFallbackProxy.component();
+                //添加注解
+                if (!Class.class.getTypeName().equals(component.getTypeName())) {
+                    Annotation annotation = new Annotation(component.getTypeName(), constPool);
+                    copyClassAnnotationsAttribute(currentCtClass, currentCtClass, annotation);
+                }
+
+                //TODO 有属性则不添加
+                CtField fallbackAttr = CtField.make("private " + serverFallbackProxy.fallbackSource().getTypeName() + " " + fallbackFieldName + " = new " + serverFallbackProxy.fallbackSource().getTypeName() + "();", currentCtClass);
+                currentCtClass.addField(fallbackAttr);
+
+
+                Class api;
+                try {
+                    //api = currentCtClass.toClass();
+                } catch (Exception e) {
+                    System.out.println("target/classes 已加载该class ：" + currentCtClass.getName());
+                }
+
+                //生成到resolverSearchPath
+                //currentCtClass.writeFile(getResolverSearchPath());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
         return null;
+    }
+
+    private static final Set<String> getSacnClasses = new HashSet<>();
+
+    @Override
+    public Set<String> getSacnClasses() {
+        return this.getSacnClasses;
     }
 
     /*@Override
