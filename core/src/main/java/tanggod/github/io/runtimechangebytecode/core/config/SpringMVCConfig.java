@@ -9,10 +9,12 @@ import javassist.CtField;
 import javassist.CtMethod;
 import javassist.bytecode.*;
 import javassist.bytecode.annotation.*;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import tanggod.github.io.common.annotation.ServerFallbackProxy;
 import tanggod.github.io.common.dto.MessageBean;
@@ -33,6 +35,7 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
     public static String baseControllerPackage = PropertyUtil.getProperty("proxy.controller.basepackage");
     public static String baseServicePackage = PropertyUtil.getProperty("proxy.service.basepackage");
 
+    private static final RequestMethod[] REQUEST_METHODS = new RequestMethod[]{RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE};
 
     @Override
     public String createProxy(String basePackage, String resolverSearchPath) throws Exception {
@@ -135,13 +138,31 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
                     fieldInfo.addAttribute(fieldAttr);
                 }
 
-                //requestmapping
-                /*Annotation requestMapping = new Annotation(RequestMapping.class.getTypeName(), constPool);
-                ArrayMemberValue amv = new ArrayMemberValue(constPool);
-                amv.setValue(new StringMemberValue[]{new StringMemberValue("x", constPool)});
-                requestMapping.addMemberValue("value", amv);
-                methodAttr2.setAnnotations(new Annotation[]{requestMapping});
-                methodInfo.addAttribute(methodAttr2);*/
+
+                //method
+                CtMethod[] methods = proxyService.getDeclaredMethods();
+                for (int i = 0; i < methods.length; i++) {
+                    CtMethod method = methods[i];
+                    String methodName = method.getName();
+                    RequestMethod requestMethod = getRequestMethod(methodName);
+                    if (null == requestMethod)
+                        continue;
+
+                    String requestMappingValue = getRequestMapping(requestMethod, methodName);
+                    //requestmapping
+                    Annotation requestMapping = new Annotation(RequestMapping.class.getTypeName(), constPool);
+                    ArrayMemberValue valueAmv = new ArrayMemberValue(constPool);
+                    valueAmv.setValue(new StringMemberValue[]{new StringMemberValue(requestMappingValue, constPool)});
+                    requestMapping.addMemberValue("value", valueAmv);
+
+                    ArrayMemberValue methodAmv = new ArrayMemberValue(constPool);
+                    EnumMemberValue enumMemberValue = new EnumMemberValue(constPool);
+                    enumMemberValue.setType(RequestMethod.class.getTypeName());
+                    enumMemberValue.setValue(requestMethod.name());
+                    methodAmv.setValue(new EnumMemberValue[]{enumMemberValue});
+                    requestMapping.addMemberValue("method", methodAmv);
+                    copyMethodAnnotationsAttribute(method, method, requestMapping);
+                }
 
 
                 try {
@@ -163,6 +184,29 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
 
     @Override
     public String createChangeProxy(String basePackage, String resolverSearchPath) throws Exception {
+
+
         return null;
+    }
+
+    private RequestMethod getRequestMethod(String methodName) {
+        RequestMethod requestMethod = null;
+        if (StringUtils.isBlank(methodName))
+            return requestMethod;
+
+        methodName = methodName.toUpperCase();
+
+        for (int i = 0; i < REQUEST_METHODS.length; i++) {
+            if (methodName.startsWith(REQUEST_METHODS[i].name()))
+                return REQUEST_METHODS[i];
+        }
+        return requestMethod;
+    }
+
+    private String getRequestMapping(RequestMethod requestMethod, String methodName) {
+        String method = methodName.replaceFirst(requestMethod.name().toLowerCase(), "");
+        String oldInitial = method.substring(0, 1);
+        String newInitial=oldInitial.toLowerCase();
+        return method.replaceFirst(oldInitial,newInitial);
     }
 }

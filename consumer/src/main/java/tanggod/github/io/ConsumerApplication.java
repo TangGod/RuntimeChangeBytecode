@@ -1,5 +1,9 @@
 package tanggod.github.io;
 
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtField;
+import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
@@ -17,17 +21,19 @@ import tanggod.github.io.runtimechangebytecode.core.ApplicationBootstrap;
 import tanggod.github.io.runtimechangebytecode.core.SpringCloudBootstrap;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @EnableFeignClients
 @SpringBootApplication
 @EnableEurekaClient
-@EnableFeignClientProxy
-@EnableServerFallbackProxy
 @EnableCircuitBreaker
-//@EnableSpringMVCProxy
+//@EnableFeignClientProxy
+//@EnableServerFallbackProxy
+@EnableSpringMVCProxy
 public class ConsumerApplication {
 
-	public static void main(String[] args) {
+	public static void main(String[] args){
 		ApplicationBootstrap.run(ConsumerApplication.class, args);
 	}
 }

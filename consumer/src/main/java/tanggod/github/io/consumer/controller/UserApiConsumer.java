@@ -17,13 +17,12 @@ import java.util.List;
  *@author teddy
  *@date 2018/9/4
  */
-@ServerFallbackProxy(fallbackSource = FallBack.class,component = RestController.class)
+@ServerFallbackProxy(fallbackSource = FallBack.class/*,component = RestController.class*/)
 public class UserApiConsumer {
 
     private UserApi userApi;
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
-    public MessageBean list() {
+    public MessageBean getList() {
         MessageBean<List<UserDto>> list = userApi.list();
         return list;
     }

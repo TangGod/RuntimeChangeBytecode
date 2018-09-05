@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
  *@date 2018/8/28
  */
 //@Component
+@Deprecated
 public class BeanInitialize implements BeanPostProcessor {
 
     private boolean x = true;
