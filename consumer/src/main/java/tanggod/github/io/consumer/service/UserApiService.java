@@ -25,9 +25,7 @@ public class UserApiService extends BaseService {
     }
 
     public MessageBean<List<UserDto>> list() {
-        System.out.println("");
         List<UserDto> result = new ArrayList();
-
         for (int i = 1; i <= 10; ++i) {
             UserDto userDto = new UserDto();
             userDto.setAddress("地址" + i);
@@ -37,7 +35,6 @@ public class UserApiService extends BaseService {
             userDto.setTelephone("电话" + i);
             result.add(userDto);
         }
-
         return this.result(result);
     }
 
@@ -46,14 +43,7 @@ public class UserApiService extends BaseService {
         return this.result(((List) this.list().getData()).get(0));
     }
 
-/*    public void test1() {
-        return ;
-    }
-    public BaseBean test2() {
-        return null;
-    }*/
-
-    public MessageBean getById(@RequestParam("id") String id) {
+    public MessageBean getById(String id) {
         List<UserDto> data = list().getData();
         UserDto result = null;
         try {
@@ -66,7 +56,7 @@ public class UserApiService extends BaseService {
         return result(result);
     }
 
-    public MessageBean create(/*@*/ UserDto userDto) {
+    public MessageBean create( UserDto userDto) {
         System.out.println(userDto.getAddress());
         System.out.println(userDto.getId());
         System.out.println(userDto.getIp());

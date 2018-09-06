@@ -21,19 +21,19 @@ import java.util.List;
  *@author teddy
  *@date 2018/9/4
  */
-@ServerFallbackProxy(fallbackSource = FallBack.class,supportGenerics = false/*,component = RestController.class*/)
+@ServerFallbackProxy(fallbackSource = FallBack.class, supportGenerics = false/*,component = RestController.class*/)
 public class UserApiConsumer {
 
     private UserApi userApi;
 
     private UserApiService userApiService;
 
-    public MessageBean<List<UserDto>> getList() {
+    public MessageBean getList() {
         MessageBean<List<UserDto>> list = userApiService.list();
         return list;
     }
 
-    public MessageBean getGet(){
+    public MessageBean getGet() {
         MessageBean messageBean = userApiService.get();
         return messageBean;
     }
@@ -42,4 +42,7 @@ public class UserApiConsumer {
         return userApiService.getById(id);
     }
 
+    public MessageBean postCreate(UserDto userDto) {
+        return userApiService.create(userDto);
+    }
 }

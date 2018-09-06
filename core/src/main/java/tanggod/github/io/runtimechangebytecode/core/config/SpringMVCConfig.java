@@ -64,7 +64,7 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
 
                 //类添加注解
                 Annotation service = new Annotation(Service.class.getTypeName(), constPool);
-                service.addMemberValue("value", new StringMemberValue(proxyClassName, constPool));
+                //service.addMemberValue("value", new StringMemberValue(proxyClassName, constPool));
 
                 copyClassAnnotationsAttribute(proxyService, proxyService, service);
 
@@ -120,7 +120,7 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
 
                 //类添加注解
                 Annotation controller = new Annotation(RestController.class.getTypeName(), constPool);
-                controller.addMemberValue("value", new StringMemberValue(proxyClassName, constPool));
+               // controller.addMemberValue("value", new StringMemberValue(proxyClassName, constPool));
 
                 copyClassAnnotationsAttribute(proxyService, proxyService, controller);
 
@@ -203,7 +203,7 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
                 //类添加注解
                 if (!currentCtClass.hasAnnotation(Service.class)) {
                     Annotation service = new Annotation(Service.class.getTypeName(), constPool);
-                    service.addMemberValue("value", new StringMemberValue(currentCtClass.getSimpleName(), constPool));
+                    //service.addMemberValue("value", new StringMemberValue(currentCtClass.getSimpleName(), constPool));
                     copyClassAnnotationsAttribute(currentCtClass, currentCtClass, service);
                 }
 
@@ -252,7 +252,7 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
                 //类添加注解
                 if (!currentCtClass.hasAnnotation(RestController.class)) {
                     Annotation controller = new Annotation(RestController.class.getTypeName(), constPool);
-                    controller.addMemberValue("value", new StringMemberValue(currentCtClass.getSimpleName(), constPool));
+                    //controller.addMemberValue("value", new StringMemberValue(currentCtClass.getSimpleName(), constPool));
                     copyClassAnnotationsAttribute(currentCtClass, currentCtClass, controller);
                 }
 
