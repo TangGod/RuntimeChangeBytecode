@@ -3,6 +3,7 @@ package tanggod.github.io.consumer.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tanggod.github.io.api.UserApi;
 import tanggod.github.io.api.UserDto;
@@ -25,9 +26,18 @@ public class UserApiConsumer {
 
     private UserApiService userApiService;
 
-    public MessageBean getList() {
+    public MessageBean<List<UserDto>> getList() {
         MessageBean<List<UserDto>> list = userApiService.list();
         return list;
+    }
+
+    public MessageBean getGet(){
+        MessageBean messageBean = userApiService.get();
+        return messageBean;
+    }
+
+    public MessageBean getById(String id) {
+        return userApiService.getById(id);
     }
 
 }

@@ -14,23 +14,21 @@ import tanggod.github.io.common.dto.MessageBean;
 import tanggod.github.io.common.utils.BaseService;
 import tanggod.github.io.consumer.FallBack;
 import tanggod.github.io.consumer.controller.UserApiConsumer;
+
 import java.util.ArrayList;
 import java.util.List;
 
-@ServerFallbackProxy(fallbackSource = FallBack.class)
+@ServerFallbackProxy(fallbackSource = FallBack.class, supportGenerics = true)
 public class UserApiService extends BaseService {
-
-    private UserApiConsumer t1;
-    public UserApiConsumer t2;
-    private UserApiConsumer t3;
 
     public UserApiService() {
     }
 
     public MessageBean<List<UserDto>> list() {
+        System.out.println("");
         List<UserDto> result = new ArrayList();
 
-        for(int i = 1; i <= 10; ++i) {
+        for (int i = 1; i <= 10; ++i) {
             UserDto userDto = new UserDto();
             userDto.setAddress("地址" + i);
             userDto.setId(String.valueOf(i));
@@ -45,18 +43,27 @@ public class UserApiService extends BaseService {
 
     public MessageBean get() {
         int i1 = 1 / 0;
-        return this.result(((List)this.list().getData()).get(0));
+        return this.result(((List) this.list().getData()).get(0));
     }
 
-    public void test1() {
+/*    public void test1() {
         return ;
     }
     public BaseBean test2() {
         return null;
-    }
+    }*/
 
     public MessageBean getById(@RequestParam("id") String id) {
-        return null;
+        List<UserDto> data = list().getData();
+        UserDto result = null;
+        try {
+            result = data.stream().filter(userDto -> {
+                return userDto.getId().equals(id);
+            }).findFirst().get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result(result);
     }
 
     public MessageBean create(/*@*/ UserDto userDto) {

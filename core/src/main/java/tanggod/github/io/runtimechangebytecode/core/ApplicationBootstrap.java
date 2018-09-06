@@ -1,5 +1,6 @@
 package tanggod.github.io.runtimechangebytecode.core;
 
+import tanggod.github.io.common.annotation.EnableServerFallbackProxy;
 import tanggod.github.io.common.dto.ApplicationBootstrapInitializeException;
 import tanggod.github.io.common.utils.ServiceLoaderApi;
 
@@ -22,6 +23,8 @@ public interface ApplicationBootstrap {
         StreamSupport.stream(applicationBootstraps.spliterator(), false).forEach(applicationBootstrap -> {
             try {
                 invoke(applicationBootstrap, "run", primarySource, args);
+                if (primarySource.isAnnotationPresent(EnableServerFallbackProxy.class))
+                    RuntimeChangeBytecode.checkMethodGenericity(primarySource.getTypeName().substring(0, primarySource.getTypeName().indexOf(".")));
             } catch (Exception e) {
                 e.printStackTrace();
             }

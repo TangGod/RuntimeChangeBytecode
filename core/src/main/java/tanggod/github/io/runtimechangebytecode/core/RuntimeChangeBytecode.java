@@ -13,6 +13,9 @@ import tanggod.github.io.runtimechangebytecode.core.config.SpringMVCConfig;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
@@ -91,6 +94,35 @@ public interface RuntimeChangeBytecode {
     }
 
     /**
+     * 校验方法是否有泛型
+     *
+     * @param basepackage
+     */
+    static void checkMethodGenericity(String... basepackage) {
+        Set<String> classes = new HashSet<>();
+        for (int i = 0; i < basepackage.length; i++) {
+            scanClasses2(new File(getResolverSearchPath2()), basepackage[i], classes);
+        }
+        System.out.println("classes loading success .");
+        classes.stream().forEach(classFullyQualifiedName -> {
+            try {
+                Class<?> api = Class.forName(classFullyQualifiedName);
+                Method[] methods = api.getDeclaredMethods();
+                for (int i = 0; i < methods.length; i++) {
+                    Method method = methods[i];
+                    Type type = method.getGenericReturnType();
+                    if (type instanceof ParameterizedType) {
+                        System.out.println("检测到含有泛型的方法 请修改后再进行提交：  "+api.getTypeName()+" > > > "+method.getName());
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        });
+
+    }
+
+    /**
      * 获取当前模块target下的classes文件夹的路径
      */
     default String getResolverSearchPath() {
@@ -140,6 +172,25 @@ public interface RuntimeChangeBytecode {
             }
         } else if (classesFile.getAbsolutePath().contains(basePackage.replace(".", "\\"))) {
             String classPackage = classesFile.getAbsolutePath().replace(getResolverSearchPath(), "").replace("\\", ".").replace(".class", "");
+            classPackage = classPackage.substring(1);
+            classes.add(classPackage);
+            System.out.println(classPackage);
+
+        }
+    }
+
+    static void scanClasses2(File classesFile, String basePackage, Collection<String> classes) {
+        if (null == classes)
+            return;
+        // 如果dir对应的文件不存在，则退出
+        if (!classesFile.exists())
+            return;
+        if (classesFile.isDirectory()) {
+            for (File file : classesFile.listFiles()) {
+                scanClasses2(file, basePackage, classes);
+            }
+        } else if (classesFile.getAbsolutePath().contains(basePackage.replace(".", "\\"))) {
+            String classPackage = classesFile.getAbsolutePath().replace(getResolverSearchPath2(), "").replace("\\", ".").replace(".class", "");
             classPackage = classPackage.substring(1);
             classes.add(classPackage);
             System.out.println(classPackage);

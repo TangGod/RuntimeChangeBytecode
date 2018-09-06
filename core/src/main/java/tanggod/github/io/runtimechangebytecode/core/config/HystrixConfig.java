@@ -234,31 +234,186 @@ public class HystrixConfig implements RuntimeChangeBytecode {
 
                 CtMethod[] methods = currentCtClass.getDeclaredMethods();
 
-                //构建fallback的属性
-                ServerFallbackProxy serverFallbackProxy = (ServerFallbackProxy) currentCtClass.getAnnotation(ServerFallbackProxy.class);
-                String methodName = serverFallbackProxy.methodName();
-                String resultType = serverFallbackProxy.fallbackSource().getDeclaredField(methodName).getType().getTypeName();
-                Class component = serverFallbackProxy.component();
-                //添加注解
-                if (!Class.class.getTypeName().equals(component.getTypeName())) {
-                    Annotation annotation = new Annotation(component.getTypeName(), constPool);
-                    copyClassAnnotationsAttribute(currentCtClass, currentCtClass, annotation);
+                boolean checkLoad = true;
+                //校验当前class是否被修改过,未被修改 则不执行
+                for (int i = 0; i < currentCtClass.getDeclaredMethods().length; i++) {
+                    CtMethod declaredMethod = currentCtClass.getDeclaredMethods()[i];
+                    if (declaredMethod.hasAnnotation(HystrixCommand.class)) {
+                        checkLoad = false;
+                        break;
+                    }
                 }
 
-                //TODO 有属性则不添加
-                CtField fallbackAttr = CtField.make("private " + serverFallbackProxy.fallbackSource().getTypeName() + " " + fallbackFieldName + " = new " + serverFallbackProxy.fallbackSource().getTypeName() + "();", currentCtClass);
-                currentCtClass.addField(fallbackAttr);
+                if (checkLoad) {
+                    //构建fallback的属性
+                    ServerFallbackProxy serverFallbackProxy = (ServerFallbackProxy) currentCtClass.getAnnotation(ServerFallbackProxy.class);
+                    String methodName = serverFallbackProxy.methodName();
+                    String resultType = serverFallbackProxy.fallbackSource().getDeclaredField(methodName).getType().getTypeName();
+                    Class component = serverFallbackProxy.component();
+                    boolean supportGenerics = serverFallbackProxy.supportGenerics();
+                    //添加注解
+                    if (!Class.class.getTypeName().equals(component.getTypeName())) {
+                        Annotation annotation = new Annotation(component.getTypeName(), constPool);
+                        copyClassAnnotationsAttribute(currentCtClass, currentCtClass, annotation);
+                    }
+
+                    // 有属性则删除
+                    for (int i = 0; i < currentCtClass.getDeclaredFields().length; i++) {
+                        CtField ctField = currentCtClass.getDeclaredFields()[i];
+                        if (ctField.getName().equals(fallbackFieldName)) {
+                            currentCtClass.removeField(ctField);
+                        }
+                    }
+
+                    CtField fallbackAttr = CtField.make("private " + serverFallbackProxy.fallbackSource().getTypeName() + " " + fallbackFieldName + " = new " + serverFallbackProxy.fallbackSource().getTypeName() + "();", currentCtClass);
+                    currentCtClass.addField(fallbackAttr);
+
+                    //注解里包含注解
+                    //默认10秒;如果并发数达到该设置值，请求会被拒绝和抛出异常并且fallback不会被调用。
+                    String fallbackIsolationSemaphoreMaxConcurrentRequests = HystrixPropertiesManager.FALLBACK_ISOLATION_SEMAPHORE_MAX_CONCURRENT_REQUESTS;
+                    Annotation hystrixProperty = new Annotation(HystrixProperty.class.getTypeName(), constPool);
+                    hystrixProperty.addMemberValue("name", new StringMemberValue(fallbackIsolationSemaphoreMaxConcurrentRequests, constPool));
+                    //并发大小
+                    hystrixProperty.addMemberValue("value", new StringMemberValue("15", constPool));
+
+                    //hystrixCommand.addMemberValue("commandProperties", new AnnotationMemberValue(hystrixProperty, constPool));
+
+                    CtMethod[] declaredMethods = currentCtClass.getDeclaredMethods();
+
+                    //创建fallback方法
+                    for (int i = 0; i < declaredMethods.length; i++) {
+                        //生成注解
+                        CtMethod ctMethod = methods[i];
+
+                        //如果是lamda则跳出本次循环
+                        if (ctMethod.getName().contains("lambda$"))
+                            continue;
+
+                        //构建注解
+                        AnnotationsAttribute methodAttr = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
+                        Annotation hystrixCommand = new Annotation(HystrixCommand.class.getTypeName(), constPool);
+                        hystrixCommand.addMemberValue("fallbackMethod", new StringMemberValue(methodFallbackPre + ctMethod.getName(), constPool));
+
+                        ArrayMemberValue arrayMemberValue = new ArrayMemberValue(constPool);
+                        arrayMemberValue.setValue(new AnnotationMemberValue[]{new AnnotationMemberValue(hystrixProperty, constPool)});
+
+                        hystrixCommand.addMemberValue("commandProperties", arrayMemberValue);
+
+                        //copyMethodAnnotationsAttribute(ctMethod, ctMethod, hystrixCommand);
+
+                        CtMethod method = declaredMethods[i];
+                        StringBuilder methodSrc = new StringBuilder();
+                        //修饰符
+                        String modifier = Modifier.toString(method.getModifiers());
+                        //返回值
+                        String typeName = method.getReturnType().getName();
+                        //方法名
+                        String name = methodFallbackPre + method.getName();
+                        //参数列表
+                        CtClass[] parameterTypes = method.getParameterTypes();
+                        StringBuilder parameterTypeSrc = new StringBuilder();
+                        StringBuilder methodInvokeParameter = new StringBuilder();
+                        //构建参数列表
+                        for (int j = 0; j < parameterTypes.length; j++) {
+                            CtClass parameterType = parameterTypes[j];
+                            String paramTypeName = parameterType.getName();
+
+                            parameterTypeSrc
+                                    // .append(annotationTypeName)
+                                    .append(" ")
+                                    .append(paramTypeName)
+                                    .append(" ")
+                                    .append("var" + j);
+                            methodInvokeParameter.append("var" + j);
+                            if (j != parameterTypes.length - 1) {
+                                parameterTypeSrc.append(",");
+                                methodInvokeParameter.append(",");
+                            }
+                        }
+                        //构建方法调用
+                        StringBuilder methodInvoke = new StringBuilder();
+                        //方法有返回值 并且返回值为注解的resultType类型
+                        if (typeName.equals(resultType)) {
+                            methodInvoke.append("return")
+                                    .append(" ")
+                                    .append(fallbackFieldName)
+                                    .append(".")
+                                    .append(methodName)
+                                    .append("();");
+                        } else if ("void".equals(typeName)) {//方法没有返回值
+                            methodInvoke.append("return ;");
+                        } else {//方法有返回值 并且返回值为未知
+                            methodInvoke.append("return null;");
+                        }
+
+                        methodSrc.append(modifier)
+                                .append(" ")
+                                .append(typeName)
+                                .append(" ")
+                                .append(name)
+                                .append(" ")
+                                .append("(")
+                                .append(parameterTypeSrc)
+                                .append(")")
+                                .append("{")
+                                .append("\n")
+                                .append(methodInvoke)
+                                .append("\n")
+                                .append("}")
+                                .append("");
 
 
-                Class api;
-                try {
-                    //api = currentCtClass.toClass();
-                } catch (Exception e) {
-                    System.out.println("target/classes 已加载该class ：" + currentCtClass.getName());
+                        //System.out.println(methodSrc.toString());
+                        //System.out.println("==============================================");
+                        CtMethod makeMethod = CtMethod.make(methodSrc.toString(), currentCtClass);
+                        try {
+                            currentCtClass.addMethod(makeMethod);
+                        } catch (CannotCompileException e) {
+                            //fallback方法存在的话 说明没有更新
+                            continue;
+                        }
+
+                        //TODO  测试
+                        if (supportGenerics) {
+                            String oldName = ctMethod.getName();
+                            String newName = proxyPrefix + oldName;
+                            ctMethod.setName(newName);
+                            //替换方法名字
+                            String methodSrc2 = methodSrc.toString().replace(name, oldName);
+                            //创建方法体
+                            String param = methodInvokeParameter.toString();//.replace("var", "");
+                            StringBuilder newmethodInvoke = new StringBuilder();
+                            if (typeName.equals(resultType)) {
+                                newmethodInvoke.append("return")
+                                        .append(" ")
+                                        .append(newName)
+                                        .append("(")
+                                        .append(param)
+                                        .append(");");
+                            } else if ("void".equals(typeName)) {//方法没有返回值
+                                newmethodInvoke
+                                        .append(newName)
+                                        .append("(")
+                                        .append(param)
+                                        .append(");")
+                                        .append("return ;");
+                            } else {//方法有返回值 并且返回值为未知
+                                newmethodInvoke.append("return null;");
+                            }
+
+                            methodSrc2 = methodSrc2.replace(methodInvoke, newmethodInvoke);
+                            //创建原方法的调用
+                            CtMethod makeMethod2 = CtMethod.make(methodSrc2, currentCtClass);
+                            copyMethodAnnotationsAttribute(makeMethod2, makeMethod2, hystrixCommand);
+                            try {
+                                currentCtClass.addMethod(makeMethod2);
+                            } catch (CannotCompileException e) {
+                            }
+                        } else
+                            copyMethodAnnotationsAttribute(ctMethod, ctMethod, hystrixCommand);
+
+                    }
                 }
-
-                //生成到resolverSearchPath
-                //currentCtClass.writeFile(getResolverSearchPath());
             } catch (Exception e) {
                 e.printStackTrace();
             }

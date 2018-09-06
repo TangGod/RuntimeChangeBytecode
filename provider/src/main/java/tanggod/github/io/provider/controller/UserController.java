@@ -21,33 +21,31 @@ import java.util.List;
  *@author teddy
  *@date 2018/8/27
  */
-//@RestController
-//@Debug
 @ServerFallbackProxy(fallbackSource = FallBack.class)
 public class UserController implements UserApi{
 
     //private UserApiService userApi;
 
     //@Autowired(required = false)
-    private UserSpi userSpi;
+    private UserApiService userApiService;
 
     @Override
     public MessageBean<List<UserDto>> list() {
-        return userSpi.list();
+        return userApiService.list();
     }
 
     @Override
     public MessageBean get() {
-        return userSpi.get();
+        return userApiService.get();
     }
 
     @Override
     public MessageBean getById(String id) {
-        return userSpi.getById(id);
+        return userApiService.getById(id);
     }
 
     @Override
     public MessageBean create(UserDto userDto) {
-        return userSpi.create(userDto);
+        return userApiService.create(userDto);
     }
 }

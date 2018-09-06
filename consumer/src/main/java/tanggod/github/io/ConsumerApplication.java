@@ -1,5 +1,6 @@
 package tanggod.github.io;
 
+import com.sun.org.apache.bcel.internal.util.ClassLoader;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
@@ -41,11 +42,11 @@ import java.util.regex.Pattern;
 @EnableSpringMVCProxy
 public class ConsumerApplication {
 
-	public static void main(String[] args){
-		ApplicationBootstrap.run(ConsumerApplication.class, args);
+    public static void main(String[] args) {
+        ApplicationBootstrap.run(ConsumerApplication.class, args);
+        //RuntimeChangeBytecode.clearTargetClasses();
 
-	}
-
+    }
 
 
 }

@@ -10,6 +10,9 @@ public @interface ServerFallbackProxy {
     //返回值类型
     //Class resultType();
 
+    //是否支持泛型
+    boolean supportGenerics() default false;
+
     Class component() default Class.class;
 
     //返回值的数据源

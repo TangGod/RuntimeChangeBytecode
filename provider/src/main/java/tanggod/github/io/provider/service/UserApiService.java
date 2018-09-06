@@ -24,10 +24,8 @@ import tanggod.github.io.common.utils.BaseService;
 import tanggod.github.io.provider.FallBack;
 import tanggod.github.io.provider.controller.UserController;
 
-//@Service
 @ServerFallbackProxy(fallbackSource = FallBack.class)
-//@Debug
-public class UserApiService extends BaseService implements UserSpi {
+public class UserApiService extends BaseService  {
 
     private UserController t1;
     public UserController t2;

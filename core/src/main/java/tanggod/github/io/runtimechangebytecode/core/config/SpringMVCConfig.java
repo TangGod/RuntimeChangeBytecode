@@ -334,6 +334,8 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
 
     private String getRequestMapping(RequestMethod requestMethod, String methodName) {
         String method = methodName.replaceFirst(requestMethod.name().toLowerCase(), "");
+        if (StringUtils.isBlank(method))
+            return "";
         String oldInitial = method.substring(0, 1);
         String newInitial = oldInitial.toLowerCase();
         return method.replaceFirst(oldInitial, newInitial);

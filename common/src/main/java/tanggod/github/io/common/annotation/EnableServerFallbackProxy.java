@@ -11,4 +11,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface EnableServerFallbackProxy {
+
+    //是否使用创建新的代理类方式
+    boolean enableCreateNewProxyClass() default false;
 }

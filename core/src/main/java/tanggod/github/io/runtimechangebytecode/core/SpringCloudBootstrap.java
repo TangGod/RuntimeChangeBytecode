@@ -40,26 +40,48 @@ public class SpringCloudBootstrap implements ApplicationBootstrap, ApplicationCo
     public void run(Class<?> primarySource, String... args) throws Exception {
         long start = System.currentTimeMillis();
         loadSpiSupport(primarySource);
-        initializeProxy(runtimeChangeBytecodeList);
+        initializeProxy(runtimeChangeBytecodeList, primarySource);
         Double stop = Double.valueOf(String.valueOf(System.currentTimeMillis() - start)) / 1000;
         System.out.println("========================================== 生成代理类用时：" + stop + "/s ==========================================");
         SpringApplication.run(primarySource, args);
     }
 
-    private void initializeProxy(List<? extends RuntimeChangeBytecode> runtimeChangeBytecodeList) throws Exception {
+    private void initializeProxy(List<? extends RuntimeChangeBytecode> runtimeChangeBytecodeList, Class<?> primarySource) throws Exception {
+        RuntimeChangeBytecode[] writeParameter = new RuntimeChangeBytecode[3];
         RuntimeChangeBytecode hystrixConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, HystrixConfig.class)).findFirst().orElse(null);
-        if (null != hystrixConfig)
-            hystrixConfig.createChangeProxy(null, null);
+        if (null != hystrixConfig) {
+            EnableServerFallbackProxy enableServerFallbackProxy = primarySource.getAnnotation(EnableServerFallbackProxy.class);
+            if (enableServerFallbackProxy.enableCreateNewProxyClass())
+                hystrixConfig.createProxy(null, null);
+            else {
+                hystrixConfig.createChangeProxy(null, null);
+                writeParameter[0] = hystrixConfig;
+            }
+        }
         RuntimeChangeBytecode springMVCConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, SpringMVCConfig.class)).findFirst().orElse(null);
-        if (null != springMVCConfig)
-            springMVCConfig.createChangeProxy(null, null);
-
-        //生成
-        RuntimeChangeBytecode.writeFile(hystrixConfig, springMVCConfig);
+        if (null != springMVCConfig) {
+            EnableSpringMVCProxy enableSpringMVCProxy = primarySource.getAnnotation(EnableSpringMVCProxy.class);
+            if (enableSpringMVCProxy.enableCreateNewProxyClass())
+                springMVCConfig.createProxy(null, null);
+            else {
+                springMVCConfig.createChangeProxy(null, null);
+                writeParameter[1] = springMVCConfig;
+            }
+        }
 
         RuntimeChangeBytecode feignConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, FeignConfig.class)).findFirst().orElse(null);
-        if (null != feignConfig)
-            feignConfig.createProxy(null, null);
+        if (null != feignConfig){
+            EnableFeignClientProxy enableFeignClientProxy = primarySource.getAnnotation(EnableFeignClientProxy.class);
+            if (enableFeignClientProxy.enableCreateNewProxyClass())
+                feignConfig.createProxy(null, null);
+            else {
+                feignConfig.createChangeProxy(null, null);
+                writeParameter[2] = feignConfig;
+            }
+        }
+
+        //生成
+        RuntimeChangeBytecode.writeFile(writeParameter);
 
     }
 
