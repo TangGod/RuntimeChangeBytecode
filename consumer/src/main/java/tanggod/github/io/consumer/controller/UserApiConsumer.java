@@ -1,5 +1,7 @@
 package tanggod.github.io.consumer.controller;
 
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -19,7 +21,7 @@ import java.util.List;
  *@author teddy
  *@date 2018/9/4
  */
-//@ServerFallbackProxy(fallbackSource = FallBack.class/*,component = RestController.class*/)
+@ServerFallbackProxy(fallbackSource = FallBack.class,supportGenerics = false/*,component = RestController.class*/)
 public class UserApiConsumer {
 
     private UserApi userApi;

@@ -9,6 +9,7 @@ import javassist.bytecode.annotation.MemberValue;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import tanggod.github.io.common.annotation.Debug;
+import tanggod.github.io.common.annotation.ServerFallbackProxy;
 import tanggod.github.io.runtimechangebytecode.core.config.SpringMVCConfig;
 
 import java.io.*;
@@ -107,12 +108,18 @@ public interface RuntimeChangeBytecode {
         classes.stream().forEach(classFullyQualifiedName -> {
             try {
                 Class<?> api = Class.forName(classFullyQualifiedName);
-                Method[] methods = api.getDeclaredMethods();
-                for (int i = 0; i < methods.length; i++) {
-                    Method method = methods[i];
-                    Type type = method.getGenericReturnType();
-                    if (type instanceof ParameterizedType) {
-                        System.out.println("检测到含有泛型的方法 请修改后再进行提交：  "+api.getTypeName()+" > > > "+method.getName());
+                if (api.isAnnotationPresent(ServerFallbackProxy.class)) {
+                    String message = "";
+                    if (api.getAnnotation(ServerFallbackProxy.class).supportGenerics())
+                        message = "\t$###### 提示：该方法已设为支持泛型(将会影响整个团队的项目的启动时间...建议移除)";
+                    Method[] methods = api.getDeclaredMethods();
+                    for (int i = 0; i < methods.length; i++) {
+                        Method method = methods[i];
+                        Type type = method.getGenericReturnType();
+                        if (type instanceof ParameterizedType) {
+                            System.out.println("***************************************************************\n" +
+                                    "-检测到含有泛型的方法 请修改后再进行提交：\n \t\t> > >" + api.getTypeName() + " \n\t\t\t\t> > > 方法名：" + method.getName().replace(proxyPrefix,"") + message);
+                        }
                     }
                 }
             } catch (ClassNotFoundException e) {

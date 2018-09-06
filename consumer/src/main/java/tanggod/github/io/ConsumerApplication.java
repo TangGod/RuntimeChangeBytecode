@@ -44,8 +44,6 @@ public class ConsumerApplication {
 
     public static void main(String[] args) {
         ApplicationBootstrap.run(ConsumerApplication.class, args);
-        //RuntimeChangeBytecode.clearTargetClasses();
-
     }
 
 
