@@ -6,22 +6,12 @@ import com.netflix.hystrix.contrib.javanica.conf.HystrixPropertiesManager;
 import javassist.*;
 import javassist.bytecode.*;
 import javassist.bytecode.annotation.*;
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import tanggod.github.io.common.annotation.EnableFeignClientProxy;
-import tanggod.github.io.common.annotation.EnableServerFallbackProxy;
-import tanggod.github.io.common.annotation.FeignProxy;
+import tanggod.github.io.common.annotation.enable.EnableServerFallbackProxy;
 import tanggod.github.io.common.annotation.ServerFallbackProxy;
-import tanggod.github.io.common.dto.MessageBean;
 import tanggod.github.io.common.type.ApplicationCache;
-import tanggod.github.io.common.utils.PropertyUtil;
 import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -39,8 +29,8 @@ public class HystrixConfig implements RuntimeChangeBytecode {
     @Override
     public String createProxy(Class<?> primarySource) throws Exception {
         Set<Class<?>> classes = new HashSet<>();
-        EnableServerFallbackProxy enableFeignClientProxy = primarySource.getAnnotation(EnableServerFallbackProxy.class);
-        String[] scanBasePackages = enableFeignClientProxy.scanBasePackages();
+        EnableServerFallbackProxy enableServerFallbackProxy = primarySource.getAnnotation(EnableServerFallbackProxy.class);
+        String[] scanBasePackages = enableServerFallbackProxy.scanBasePackages();
 
         for (int i = 0; i < scanBasePackages.length; i++) {
             classes.addAll(loaderClassSet(scanBasePackages[i]));
@@ -218,8 +208,8 @@ public class HystrixConfig implements RuntimeChangeBytecode {
     @Override
     public String createChangeProxy(Class<?> primarySource) throws Exception {
         Set<String> classes = new HashSet<>();
-        EnableServerFallbackProxy enableFeignClientProxy = primarySource.getAnnotation(EnableServerFallbackProxy.class);
-        String[] scanBasePackages = enableFeignClientProxy.scanBasePackages();
+        EnableServerFallbackProxy enableServerFallbackProxy = primarySource.getAnnotation(EnableServerFallbackProxy.class);
+        String[] scanBasePackages = enableServerFallbackProxy.scanBasePackages();
 
         for (int i = 0; i < scanBasePackages.length; i++) {
             scanClasses(new File(getResolverSearchPath()), scanBasePackages[i], classes);

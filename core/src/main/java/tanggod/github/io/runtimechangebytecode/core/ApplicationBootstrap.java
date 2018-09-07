@@ -1,6 +1,6 @@
 package tanggod.github.io.runtimechangebytecode.core;
 
-import tanggod.github.io.common.annotation.EnableServerFallbackProxy;
+import tanggod.github.io.common.annotation.enable.EnableServerFallbackProxy;
 import tanggod.github.io.common.dto.ApplicationBootstrapInitializeException;
 import tanggod.github.io.common.utils.ServiceLoaderApi;
 

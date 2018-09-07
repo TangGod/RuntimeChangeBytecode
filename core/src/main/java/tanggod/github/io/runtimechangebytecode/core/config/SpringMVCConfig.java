@@ -1,28 +1,18 @@
 package tanggod.github.io.runtimechangebytecode.core.config;
 
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
-import com.netflix.hystrix.contrib.javanica.conf.HystrixPropertiesManager;
 import javassist.*;
 import javassist.bytecode.*;
 import javassist.bytecode.annotation.*;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-import tanggod.github.io.common.annotation.EnableServerFallbackProxy;
-import tanggod.github.io.common.annotation.EnableSpringMVCProxy;
-import tanggod.github.io.common.annotation.ServerFallbackProxy;
-import tanggod.github.io.common.dto.MessageBean;
-import tanggod.github.io.common.utils.PropertyUtil;
+import tanggod.github.io.common.annotation.enable.EnableSpringMVCProxy;
 import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
 
 import java.io.File;
-import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,9 +33,9 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
         Set<Class<?>> classes = new HashSet<>();
         ClassPool classPool = ClassPool.getDefault();
 
-        EnableSpringMVCProxy enableFeignClientProxy = primarySource.getAnnotation(EnableSpringMVCProxy.class);
-        String[] scanServiceBasePackages = enableFeignClientProxy.scanServiceBasePackages();
-        String[] scanRestControllerBasePackages = enableFeignClientProxy.scanRestControllerBasePackages();
+        EnableSpringMVCProxy enableSpringMVCProxy = primarySource.getAnnotation(EnableSpringMVCProxy.class);
+        String[] scanServiceBasePackages = enableSpringMVCProxy.scanServiceBasePackages();
+        String[] scanRestControllerBasePackages = enableSpringMVCProxy.scanRestControllerBasePackages();
 
         for (int i = 0; i < scanServiceBasePackages.length; i++) {
             classes.addAll(loaderClassSet(scanServiceBasePackages[i]));
@@ -199,9 +189,9 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
         ClassPool classPool = ClassPool.getDefault();
         Set<String> classes = new HashSet<>();
 
-        EnableSpringMVCProxy enableFeignClientProxy = primarySource.getAnnotation(EnableSpringMVCProxy.class);
-        String[] scanServiceBasePackages = enableFeignClientProxy.scanServiceBasePackages();
-        String[] scanRestControllerBasePackages = enableFeignClientProxy.scanRestControllerBasePackages();
+        EnableSpringMVCProxy enableSpringMVCProxy = primarySource.getAnnotation(EnableSpringMVCProxy.class);
+        String[] scanServiceBasePackages = enableSpringMVCProxy.scanServiceBasePackages();
+        String[] scanRestControllerBasePackages = enableSpringMVCProxy.scanRestControllerBasePackages();
 
         //-1 ：service    class:@Service   field:@Autowired
         for (int i = 0; i < scanServiceBasePackages.length; i++) {

@@ -1,6 +1,5 @@
 package tanggod.github.io.runtimechangebytecode.core.config;
 
-import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.bytecode.AnnotationsAttribute;
@@ -9,9 +8,8 @@ import javassist.bytecode.ConstPool;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.StringMemberValue;
 import org.springframework.cloud.openfeign.FeignClient;
-import tanggod.github.io.common.annotation.EnableFeignClientProxy;
+import tanggod.github.io.common.annotation.enable.EnableFeignClientProxy;
 import tanggod.github.io.common.annotation.FeignProxy;
-import tanggod.github.io.common.utils.PropertyUtil;
 import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
 
 import java.util.ArrayList;
