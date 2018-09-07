@@ -15,5 +15,5 @@ public @interface EnableFeignClientProxy {
     boolean enableCreateNewProxyClass() default true;
 
     //扫包
-    String[] scanBasePackages();
+    String[] scanBasePackages() default "undefined";
 }

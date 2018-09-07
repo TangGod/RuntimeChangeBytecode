@@ -5,15 +5,11 @@
 
 package tanggod.github.io.consumer.service;
 
-import org.springframework.web.bind.annotation.RequestParam;
 import tanggod.github.io.api.UserDto;
-import tanggod.github.io.api.UserSpi;
 import tanggod.github.io.common.annotation.ServerFallbackProxy;
-import tanggod.github.io.common.dto.BaseBean;
 import tanggod.github.io.common.dto.MessageBean;
 import tanggod.github.io.common.utils.BaseService;
 import tanggod.github.io.consumer.FallBack;
-import tanggod.github.io.consumer.controller.UserApiConsumer;
 
 import java.util.ArrayList;
 import java.util.List;

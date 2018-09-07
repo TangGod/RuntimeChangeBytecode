@@ -36,6 +36,158 @@ public class DependencyInjectionConfig implements RuntimeChangeBytecode {
 
     @Override
     public String createProxy(Class<?> primarySource) throws Exception {
+       /* Set<Class<?>> classes = new HashSet<>();
+        ClassPool classPool = ClassPool.getDefault();
+
+        EnableSpringMVCProxy enableSpringMVCProxy = primarySource.getAnnotation(EnableSpringMVCProxy.class);
+        String[] scanServiceBasePackages = enableSpringMVCProxy.scanServiceBasePackages();
+        String[] scanRestControllerBasePackages = enableSpringMVCProxy.scanRestControllerBasePackages();
+
+        for (int i = 0; i < scanServiceBasePackages.length; i++) {
+            classes.addAll(loaderClassSet(scanServiceBasePackages[i]));
+        }
+        //service包下的class
+        classes = filterDebug(classes);
+        //获取代理类
+        Set<Class<?>> proxyClasses;
+        proxyClasses = filterProxy(classes);
+        //有代理类的话,就只给代理类的生成
+        if (proxyClasses.size() > 0)
+            classes = proxyClasses;
+
+
+        classes.stream().forEach(currentClass -> {
+            try {
+                String proxyPackageClassName = getProxyPackageName(currentClass) + "_mvc";
+                String proxyClassName = currentClass.getSimpleName() + "_mvc";
+                CtClass proxyService = classPool.get(currentClass.getTypeName());
+                proxyService.defrost();
+                //代理的class
+                ClassFile classFile = proxyService.getClassFile();
+                //constPool
+                ConstPool constPool = classFile.getConstPool();
+
+                //类添加注解
+                Annotation service = new Annotation(Service.class.getTypeName(), constPool);
+                //service.addMemberValue("value", new StringMemberValue(proxyClassName, constPool));
+
+                copyClassAnnotationsAttribute(proxyService, proxyService, service);
+
+
+                //属性添加注解
+                Annotation autowired = new Annotation(Autowired.class.getTypeName(), constPool);
+                autowired.addMemberValue("required", new BooleanMemberValue(false, constPool));
+
+                CtField[] declaredFields = proxyService.getDeclaredFields();
+                for (int i = 0; i < declaredFields.length; i++) {
+                    AnnotationsAttribute fieldAttr = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
+                    CtField declaredField = declaredFields[i];
+                    FieldInfo fieldInfo = declaredField.getFieldInfo();
+                    fieldAttr.addAnnotation(autowired);
+                    fieldInfo.addAttribute(fieldAttr);
+                }
+
+                try {
+                    proxyService.setName(proxyPackageClassName);
+                    Class api = proxyService.toClass();
+                } catch (Exception e) {
+                    System.out.println("target/classes 已加载该class ：" + getProxyPackageName(currentClass));
+                }
+
+                //生成到resolverSearchPath
+                proxyService.writeFile(getResolverSearchPath());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        classes.clear();
+        for (int i = 0; i < scanRestControllerBasePackages.length; i++) {
+            classes.addAll(loaderClassSet(scanRestControllerBasePackages[i]));
+        }
+
+        //controller包下的class
+        classes = filterDebug(classes);
+        //获取代理类
+        proxyClasses = filterProxy(classes);
+        //有代理类的话,就只给代理类的生成
+        if (proxyClasses.size() > 0)
+            classes = proxyClasses;
+    *//*    if (true)
+            return null;*//*
+        //controller
+        classes.stream().forEach(currentClass -> {
+            try {
+                String proxyPackageClassName = getProxyPackageName(currentClass) + "_mvc";
+                String proxyClassName = currentClass.getSimpleName() + "_mvc";
+                CtClass proxyService = classPool.get(currentClass.getTypeName());
+                proxyService.defrost();
+                //代理的class
+                ClassFile classFile = proxyService.getClassFile();
+                //constPool
+                ConstPool constPool = classFile.getConstPool();
+
+                //类添加注解
+                Annotation controller = new Annotation(RestController.class.getTypeName(), constPool);
+                // controller.addMemberValue("value", new StringMemberValue(proxyClassName, constPool));
+
+                copyClassAnnotationsAttribute(proxyService, proxyService, controller);
+
+                //属性添加注解
+                Annotation autowired = new Annotation(Autowired.class.getTypeName(), constPool);
+                autowired.addMemberValue("required", new BooleanMemberValue(false, constPool));
+
+                CtField[] declaredFields = proxyService.getDeclaredFields();
+                for (int i = 0; i < declaredFields.length; i++) {
+                    AnnotationsAttribute fieldAttr = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
+                    CtField declaredField = declaredFields[i];
+                    FieldInfo fieldInfo = declaredField.getFieldInfo();
+                    fieldAttr.addAnnotation(autowired);
+                    fieldInfo.addAttribute(fieldAttr);
+                }
+
+
+                //method
+                CtMethod[] methods = proxyService.getDeclaredMethods();
+                for (int i = 0; i < methods.length; i++) {
+                    CtMethod method = methods[i];
+                    String methodName = method.getName();
+                    RequestMethod requestMethod = getRequestMethod(methodName);
+                    if (null == requestMethod)
+                        continue;
+
+                    String requestMappingValue = getRequestMapping(requestMethod, methodName);
+                    //requestmapping
+                    Annotation requestMapping = new Annotation(RequestMapping.class.getTypeName(), constPool);
+                    ArrayMemberValue valueAmv = new ArrayMemberValue(constPool);
+                    valueAmv.setValue(new StringMemberValue[]{new StringMemberValue(requestMappingValue, constPool)});
+                    requestMapping.addMemberValue("value", valueAmv);
+
+                    ArrayMemberValue methodAmv = new ArrayMemberValue(constPool);
+                    EnumMemberValue enumMemberValue = new EnumMemberValue(constPool);
+                    enumMemberValue.setType(RequestMethod.class.getTypeName());
+                    enumMemberValue.setValue(requestMethod.name());
+                    methodAmv.setValue(new EnumMemberValue[]{enumMemberValue});
+                    requestMapping.addMemberValue("method", methodAmv);
+                    copyMethodAnnotationsAttribute(method, method, requestMapping);
+                }
+
+
+                try {
+                    proxyService.setName(proxyPackageClassName);
+                    Class api = proxyService.toClass();
+                } catch (Exception e) {
+                    System.out.println("target/classes 已加载该class ：" + getProxyPackageName(currentClass));
+                }
+
+                //生成到resolverSearchPath
+                proxyService.writeFile(getResolverSearchPath());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        */
         return null;
     }
 
@@ -67,7 +219,7 @@ public class DependencyInjectionConfig implements RuntimeChangeBytecode {
                 //类添加注解
                 if (!currentCtClass.hasAnnotation(Service.class)) {
                     Annotation service = new Annotation(Service.class.getTypeName(), constPool);
-                    //service.addMemberValue("value", new StringMemberValue(currentCtClass.getSimpleName(), constPool));
+                    service.addMemberValue("value", new StringMemberValue(currentCtClass.getName(), constPool));
                     copyClassAnnotationsAttribute(currentCtClass, currentCtClass, service);
                 }
 
@@ -111,7 +263,7 @@ public class DependencyInjectionConfig implements RuntimeChangeBytecode {
                 //类添加注解
                 if (!currentCtClass.hasAnnotation(RestController.class)) {
                     Annotation controller = new Annotation(RestController.class.getTypeName(), constPool);
-                    //controller.addMemberValue("value", new StringMemberValue(currentCtClass.getSimpleName(), constPool));
+                    controller.addMemberValue("value", new StringMemberValue(currentCtClass.getName(), constPool));
                     copyClassAnnotationsAttribute(currentCtClass, currentCtClass, controller);
                 }
 
@@ -155,7 +307,7 @@ public class DependencyInjectionConfig implements RuntimeChangeBytecode {
                 //类添加注解
                 if (!currentCtClass.hasAnnotation(Controller.class)) {
                     Annotation controller = new Annotation(Controller.class.getTypeName(), constPool);
-                    //controller.addMemberValue("value", new StringMemberValue(currentCtClass.getSimpleName(), constPool));
+                    controller.addMemberValue("value", new StringMemberValue(currentCtClass.getName(), constPool));
                     copyClassAnnotationsAttribute(currentCtClass, currentCtClass, controller);
                 }
 

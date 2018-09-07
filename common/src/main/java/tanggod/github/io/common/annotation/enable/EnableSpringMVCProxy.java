@@ -10,6 +10,5 @@ public @interface EnableSpringMVCProxy {
     boolean enableCreateNewProxyClass() default false;
 
     //扫包
-    String[] scanServiceBasePackages();
-    String[] scanRestControllerBasePackages();
+    String[] scanRequestMappingBasePackages() default "undefined";
 }

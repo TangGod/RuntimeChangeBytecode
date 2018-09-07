@@ -16,5 +16,5 @@ public @interface EnableServerFallbackProxy {
     boolean enableCreateNewProxyClass() default false;
 
     //扫包
-    String[] scanBasePackages();
+    String[] scanBasePackages() default "undefined";
 }

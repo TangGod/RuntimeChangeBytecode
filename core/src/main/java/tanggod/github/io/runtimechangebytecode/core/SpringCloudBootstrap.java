@@ -6,11 +6,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
+import tanggod.github.io.common.annotation.enable.EnableDependencyInjection;
 import tanggod.github.io.common.annotation.enable.EnableFeignClientProxy;
 import tanggod.github.io.common.annotation.enable.EnableServerFallbackProxy;
 import tanggod.github.io.common.annotation.enable.EnableSpringMVCProxy;
 import tanggod.github.io.common.utils.ServiceLoaderApi;
 import tanggod.github.io.common.utils.SpringBeanUtils;
+import tanggod.github.io.runtimechangebytecode.core.config.DependencyInjectionConfig;
 import tanggod.github.io.runtimechangebytecode.core.config.FeignConfig;
 import tanggod.github.io.runtimechangebytecode.core.config.HystrixConfig;
 import tanggod.github.io.runtimechangebytecode.core.config.SpringMVCConfig;
@@ -77,6 +79,15 @@ public class SpringCloudBootstrap implements ApplicationBootstrap, ApplicationCo
                 createChangeProxys.add(feignConfig);
         }
 
+        RuntimeChangeBytecode dependencyInjectionConfig = runtimeChangeBytecodeList.stream().filter(runtimeChangeBytecode -> compareClassType(runtimeChangeBytecode, DependencyInjectionConfig.class)).findFirst().orElse(null);
+        if (null != dependencyInjectionConfig) {
+            EnableDependencyInjection enableFeignClientProxy = primarySource.getAnnotation(EnableDependencyInjection.class);
+            if (enableFeignClientProxy.enableCreateNewProxyClass())
+                createProxys.add(dependencyInjectionConfig);
+            else
+                createChangeProxys.add(dependencyInjectionConfig);
+        }
+
         for (int i = 0; i < createChangeProxys.size(); i++) {
             createChangeProxys.get(i).createChangeProxy(primarySource);
             writeParameter[i] = createChangeProxys.get(i);
@@ -94,6 +105,7 @@ public class SpringCloudBootstrap implements ApplicationBootstrap, ApplicationCo
         runtimeChangeBytecodeList = StreamSupport.stream(runtimeChangeBytecodes.spliterator(), false).filter(data -> (compareClassType(data, FeignConfig.class) ? primarySource.isAnnotationPresent(EnableFeignClientProxy.class) : true)).collect(Collectors.toList());
         runtimeChangeBytecodeList = runtimeChangeBytecodeList.stream().filter(data -> (compareClassType(data, HystrixConfig.class) ? primarySource.isAnnotationPresent(EnableServerFallbackProxy.class) : true)).collect(Collectors.toList());
         runtimeChangeBytecodeList = runtimeChangeBytecodeList.stream().filter(data -> (compareClassType(data, SpringMVCConfig.class) ? primarySource.isAnnotationPresent(EnableSpringMVCProxy.class) : true)).collect(Collectors.toList());
+        runtimeChangeBytecodeList = runtimeChangeBytecodeList.stream().filter(data -> (compareClassType(data, DependencyInjectionConfig.class) ? primarySource.isAnnotationPresent(EnableDependencyInjection.class) : true)).collect(Collectors.toList());
     }
 
     private boolean compareClassType(Object class1, Class class2) {

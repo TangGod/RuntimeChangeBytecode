@@ -36,7 +36,7 @@ public class UserController implements UserApi {
     private UserApiService userApiService;
 
     @Override
-    public MessageBean list(String accessToken) {
+    public MessageBean list(@RequestHeader("accessToken") String accessToken) {
         System.out.println(accessToken);
         return userApiService.list();
     }
