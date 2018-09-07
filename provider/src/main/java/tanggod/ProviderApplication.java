@@ -12,9 +12,9 @@ import tanggod.github.io.runtimechangebytecode.core.SpringCloudBootstrap;
 @SpringBootApplication
 @EnableEurekaClient
 @EnableCircuitBreaker
-@EnableServerFallbackProxy
-//@EnableFeignClientProxy
-@EnableSpringMVCProxy
+//@EnableFeignClientProxy(scanBasePackages = "tanggod")
+@EnableServerFallbackProxy(scanBasePackages = "tanggod")
+@EnableSpringMVCProxy(scanServiceBasePackages = "tanggod.github.io.provider.service",scanRestControllerBasePackages = "tanggod.github.io.provider.controller")
 public class ProviderApplication {
 
     public static void main(String[] args) throws Exception {

@@ -2,10 +2,8 @@ package tanggod.github.io.api;
 
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import tanggod.github.io.api.UserDto;
@@ -23,7 +21,7 @@ import tanggod.github.io.common.dto.MessageBean;
 public interface UserApi {
 
     @RequestMapping(value = "/list", method = RequestMethod.GET)
-    MessageBean<List<UserDto>> list();
+    MessageBean<List<UserDto>> list(@RequestHeader("accessToken") String accessToken);
 
     @RequestMapping(value = "/get", method = RequestMethod.GET)
     MessageBean get();

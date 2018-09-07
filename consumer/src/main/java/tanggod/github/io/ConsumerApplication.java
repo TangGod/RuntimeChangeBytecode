@@ -37,9 +37,9 @@ import java.util.regex.Pattern;
 @SpringBootApplication
 @EnableEurekaClient
 @EnableCircuitBreaker
-@EnableFeignClientProxy
-@EnableServerFallbackProxy
-@EnableSpringMVCProxy
+@EnableFeignClientProxy(scanBasePackages = "tanggod")
+@EnableServerFallbackProxy(scanBasePackages = "tanggod")
+@EnableSpringMVCProxy(scanServiceBasePackages = "tanggod.github.io.consumer.service",scanRestControllerBasePackages = "tanggod.github.io.consumer.controller")
 public class ConsumerApplication {
 
     public static void main(String[] args) {

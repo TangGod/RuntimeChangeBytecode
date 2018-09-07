@@ -30,7 +30,7 @@ public class FeignConfig implements RuntimeChangeBytecode {
     public static final List<String> classNames = new ArrayList<>();
     public static final List<String> classFilePaths = new ArrayList<>();
 
-    public static String basePackage = PropertyUtil.getProperty("proxy.feign.basepackage");
+    public static String basePackage;// = PropertyUtil.getProperty("proxy.feign.basepackage");
 
     @Override
     public String createProxy(String basePackage, String resolverSearchPath) throws Exception {

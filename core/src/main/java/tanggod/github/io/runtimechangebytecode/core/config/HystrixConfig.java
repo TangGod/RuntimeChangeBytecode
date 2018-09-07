@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  */
 public class HystrixConfig implements RuntimeChangeBytecode {
 
-    public static String basePackage = PropertyUtil.getProperty("proxy.hystrix.basepackage");
+    public static String basePackage;// = PropertyUtil.getProperty("proxy.hystrix.basepackage");
 
     @Override
     public String createProxy(String basePackage, String resolverSearchPath) throws Exception {

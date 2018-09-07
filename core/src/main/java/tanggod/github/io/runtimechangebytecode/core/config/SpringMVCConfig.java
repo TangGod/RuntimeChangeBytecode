@@ -31,8 +31,8 @@ import java.util.Set;
  */
 public class SpringMVCConfig implements RuntimeChangeBytecode {
 
-    public static String baseControllerPackage = PropertyUtil.getProperty("proxy.controller.basepackage");
-    public static String baseServicePackage = PropertyUtil.getProperty("proxy.service.basepackage");
+    public static String baseControllerPackage;// = PropertyUtil.getProperty("proxy.controller.basepackage");
+    public static String baseServicePackage;// = PropertyUtil.getProperty("proxy.service.basepackage");
 
     private static final RequestMethod[] REQUEST_METHODS = new RequestMethod[]{RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE};
 

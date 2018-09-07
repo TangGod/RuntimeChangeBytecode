@@ -24,7 +24,7 @@ import tanggod.github.io.common.utils.BaseService;
 import tanggod.github.io.provider.FallBack;
 import tanggod.github.io.provider.controller.UserController;
 
-@ServerFallbackProxy(fallbackSource = FallBack.class)
+@ServerFallbackProxy(fallbackSource = FallBack.class,supportGenerics = true,component = Service.class)
 public class UserApiService extends BaseService  {
 
     private UserController t1;
@@ -62,8 +62,17 @@ public class UserApiService extends BaseService  {
         return null;
     }
 
-    public MessageBean getById(@RequestParam("id") String id) {
-        return null;
+    public MessageBean getById(String id) {
+        List<UserDto> data = list().getData();
+        UserDto result = null;
+        try {
+            result = data.stream().filter(userDto -> {
+                return userDto.getId().equals(id);
+            }).findFirst().get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result(result);
     }
 
     public MessageBean create(/*@*/ UserDto userDto) {

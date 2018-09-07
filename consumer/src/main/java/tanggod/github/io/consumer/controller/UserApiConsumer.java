@@ -29,20 +29,20 @@ public class UserApiConsumer {
     private UserApiService userApiService;
 
     public MessageBean getList() {
-        MessageBean<List<UserDto>> list = userApiService.list();
+        MessageBean<List<UserDto>> list = userApi.list(null);
         return list;
     }
 
     public MessageBean getGet() {
-        MessageBean messageBean = userApiService.get();
+        MessageBean messageBean = userApi.get();
         return messageBean;
     }
 
     public MessageBean getById(String id) {
-        return userApiService.getById(id);
+        return userApi.getById(id);
     }
 
     public MessageBean postCreate(UserDto userDto) {
-        return userApiService.create(userDto);
+        return userApi.create(userDto);
     }
 }

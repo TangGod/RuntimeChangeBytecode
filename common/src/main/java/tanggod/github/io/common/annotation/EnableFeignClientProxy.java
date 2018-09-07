@@ -13,4 +13,7 @@ import java.lang.annotation.*;
 public @interface EnableFeignClientProxy {
     //是否使用创建新的代理类方式
     boolean enableCreateNewProxyClass() default true;
+
+    //扫包
+    String[] scanBasePackages();
 }

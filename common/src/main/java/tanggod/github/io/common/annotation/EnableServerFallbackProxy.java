@@ -14,4 +14,7 @@ public @interface EnableServerFallbackProxy {
 
     //是否使用创建新的代理类方式
     boolean enableCreateNewProxyClass() default false;
+
+    //扫包
+    String[] scanBasePackages();
 }
