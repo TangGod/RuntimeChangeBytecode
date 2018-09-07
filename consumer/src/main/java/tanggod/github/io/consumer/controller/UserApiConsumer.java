@@ -39,7 +39,7 @@ public class UserApiConsumer {
     }
 
     public MessageBean getById(String id) {
-        return userApi.getById(id);
+        return userApiService.getById(id);
     }
 
     public MessageBean postCreate(UserDto userDto) {

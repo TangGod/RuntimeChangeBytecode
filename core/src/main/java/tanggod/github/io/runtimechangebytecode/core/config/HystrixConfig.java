@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import tanggod.github.io.common.annotation.EnableFeignClientProxy;
+import tanggod.github.io.common.annotation.EnableServerFallbackProxy;
 import tanggod.github.io.common.annotation.FeignProxy;
 import tanggod.github.io.common.annotation.ServerFallbackProxy;
 import tanggod.github.io.common.dto.MessageBean;
@@ -32,12 +34,18 @@ import java.util.stream.Collectors;
  */
 public class HystrixConfig implements RuntimeChangeBytecode {
 
-    public static String basePackage;// = PropertyUtil.getProperty("proxy.hystrix.basepackage");
+   // public static String basePackage = PropertyUtil.getProperty("proxy.hystrix.basepackage");
 
     @Override
-    public String createProxy(String basePackage, String resolverSearchPath) throws Exception {
-        basePackage = this.basePackage;
-        Set<Class<?>> classes = loaderClassSet(basePackage);
+    public String createProxy(Class<?> primarySource) throws Exception {
+        Set<Class<?>> classes = new HashSet<>();
+        EnableServerFallbackProxy enableFeignClientProxy = primarySource.getAnnotation(EnableServerFallbackProxy.class);
+        String[] scanBasePackages = enableFeignClientProxy.scanBasePackages();
+
+        for (int i = 0; i < scanBasePackages.length; i++) {
+            classes.addAll(loaderClassSet(scanBasePackages[i]));
+        }
+
         //过滤后的feign客户端class
         classes = filterAnnotation(ServerFallbackProxy.class, classes);
         ClassPool classPool = ClassPool.getDefault();
@@ -203,18 +211,21 @@ public class HystrixConfig implements RuntimeChangeBytecode {
                 e.printStackTrace();
             }
         });
-        loaderClassSet(basePackage);
 
         return null;
     }
 
     @Override
-    public String createChangeProxy(String basePackage, String resolverSearchPath) throws Exception {
-        basePackage = this.basePackage;
+    public String createChangeProxy(Class<?> primarySource) throws Exception {
         Set<String> classes = new HashSet<>();
+        EnableServerFallbackProxy enableFeignClientProxy = primarySource.getAnnotation(EnableServerFallbackProxy.class);
+        String[] scanBasePackages = enableFeignClientProxy.scanBasePackages();
+
+        for (int i = 0; i < scanBasePackages.length; i++) {
+            scanClasses(new File(getResolverSearchPath()), scanBasePackages[i], classes);
+        }
         ClassPool classPool = ClassPool.getDefault();
 
-        scanClasses(new File(getResolverSearchPath()), basePackage, classes);
 
         getSacnClasses.addAll(classes);
 

@@ -15,7 +15,6 @@ import tanggod.github.io.runtimechangebytecode.core.SpringCloudBootstrap;
 
 @EnableCircuitBreaker //开启服务降级 断路器
 @EnableHystrix
-@EnableFeignClientProxy//开启FeignClient代理
 public class RuntimeChangeBytecodeApplication   {
 
 	public static void main(String[] args) throws Exception {

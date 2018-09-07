@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import tanggod.github.io.common.annotation.EnableServerFallbackProxy;
+import tanggod.github.io.common.annotation.EnableSpringMVCProxy;
 import tanggod.github.io.common.annotation.ServerFallbackProxy;
 import tanggod.github.io.common.dto.MessageBean;
 import tanggod.github.io.common.utils.PropertyUtil;
@@ -31,17 +33,24 @@ import java.util.Set;
  */
 public class SpringMVCConfig implements RuntimeChangeBytecode {
 
-    public static String baseControllerPackage;// = PropertyUtil.getProperty("proxy.controller.basepackage");
-    public static String baseServicePackage;// = PropertyUtil.getProperty("proxy.service.basepackage");
+    //public static String baseControllerPackage = PropertyUtil.getProperty("proxy.controller.basepackage");
+    //public static String baseServicePackage= PropertyUtil.getProperty("proxy.service.basepackage");
 
     private static final RequestMethod[] REQUEST_METHODS = new RequestMethod[]{RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE};
 
     @Override
-    public String createProxy(String basePackage, String resolverSearchPath) throws Exception {
+    public String createProxy(Class<?> primarySource) throws Exception {
+        Set<Class<?>> classes = new HashSet<>();
         ClassPool classPool = ClassPool.getDefault();
 
+        EnableSpringMVCProxy enableFeignClientProxy = primarySource.getAnnotation(EnableSpringMVCProxy.class);
+        String[] scanServiceBasePackages = enableFeignClientProxy.scanServiceBasePackages();
+        String[] scanRestControllerBasePackages = enableFeignClientProxy.scanRestControllerBasePackages();
+
+        for (int i = 0; i < scanServiceBasePackages.length; i++) {
+            classes.addAll(loaderClassSet(scanServiceBasePackages[i]));
+        }
         //service包下的class
-        Set<Class<?>> classes = loaderClassSet(baseServicePackage);
         classes = filterDebug(classes);
         //获取代理类
         Set<Class<?>> proxyClasses;
@@ -96,8 +105,12 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
             }
         });
 
+        classes.clear();
+        for (int i = 0; i < scanRestControllerBasePackages.length; i++) {
+            classes.addAll(loaderClassSet(scanRestControllerBasePackages[i]));
+        }
+
         //controller包下的class
-        classes = loaderClassSet(baseControllerPackage);
         classes = filterDebug(classes);
         //获取代理类
         proxyClasses = filterProxy(classes);
@@ -120,7 +133,7 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
 
                 //类添加注解
                 Annotation controller = new Annotation(RestController.class.getTypeName(), constPool);
-               // controller.addMemberValue("value", new StringMemberValue(proxyClassName, constPool));
+                // controller.addMemberValue("value", new StringMemberValue(proxyClassName, constPool));
 
                 copyClassAnnotationsAttribute(proxyService, proxyService, controller);
 
@@ -182,13 +195,18 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
     }
 
     @Override
-    public String createChangeProxy(String basePackage, String resolverSearchPath) throws Exception {
+    public String createChangeProxy(Class<?> primarySource) throws Exception {
         ClassPool classPool = ClassPool.getDefault();
         Set<String> classes = new HashSet<>();
 
-        //-1 ：controller    class:@Service   field:@Autowired
-        scanClasses(new File(getResolverSearchPath()), baseServicePackage, classes);
+        EnableSpringMVCProxy enableFeignClientProxy = primarySource.getAnnotation(EnableSpringMVCProxy.class);
+        String[] scanServiceBasePackages = enableFeignClientProxy.scanServiceBasePackages();
+        String[] scanRestControllerBasePackages = enableFeignClientProxy.scanRestControllerBasePackages();
 
+        //-1 ：service    class:@Service   field:@Autowired
+        for (int i = 0; i < scanServiceBasePackages.length; i++) {
+            scanClasses(new File(getResolverSearchPath()), scanServiceBasePackages[i], classes);
+        }
         getSacnClasses.addAll(classes);
 
         classes.stream().forEach(classFullyQualifiedName -> {
@@ -237,7 +255,9 @@ public class SpringMVCConfig implements RuntimeChangeBytecode {
         //-2 ：controller    class:@RestController   field:@Autowired   method: @RequestMapping
 
         classes.clear();
-        scanClasses(new File(getResolverSearchPath()), baseControllerPackage, classes);
+        for (int i = 0; i < scanRestControllerBasePackages.length; i++) {
+            scanClasses(new File(getResolverSearchPath()), scanRestControllerBasePackages[i], classes);
+        }
 
         getSacnClasses.addAll(classes);
 

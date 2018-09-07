@@ -78,14 +78,14 @@ public class SpringCloudBootstrap implements ApplicationBootstrap, ApplicationCo
         }
 
         for (int i = 0; i < createChangeProxys.size(); i++) {
-            createChangeProxys.get(i).createChangeProxy(null, null);
+            createChangeProxys.get(i).createChangeProxy(primarySource);
             writeParameter[i] = createChangeProxys.get(i);
         }
         //生成
         RuntimeChangeBytecode.writeFile(writeParameter);
 
         for (int i = 0; i < createProxys.size(); i++) {
-            createProxys.get(i).createProxy(null, null);
+            createProxys.get(i).createProxy(primarySource);
         }
     }
 

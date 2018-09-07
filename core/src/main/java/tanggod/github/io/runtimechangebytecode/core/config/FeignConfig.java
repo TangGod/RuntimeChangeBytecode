@@ -9,6 +9,7 @@ import javassist.bytecode.ConstPool;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.StringMemberValue;
 import org.springframework.cloud.openfeign.FeignClient;
+import tanggod.github.io.common.annotation.EnableFeignClientProxy;
 import tanggod.github.io.common.annotation.FeignProxy;
 import tanggod.github.io.common.utils.PropertyUtil;
 import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
@@ -30,12 +31,19 @@ public class FeignConfig implements RuntimeChangeBytecode {
     public static final List<String> classNames = new ArrayList<>();
     public static final List<String> classFilePaths = new ArrayList<>();
 
-    public static String basePackage;// = PropertyUtil.getProperty("proxy.feign.basepackage");
+    //public static String basePackage = PropertyUtil.getProperty("proxy.feign.basepackage");
 
     @Override
-    public String createProxy(String basePackage, String resolverSearchPath) throws Exception {
-        basePackage = this.basePackage;
-        Set<Class<?>> classes = loaderClassSet(basePackage);
+    public String createProxy(Class<?> primarySource) throws Exception {
+        Set<Class<?>> classes = new HashSet<>();
+        EnableFeignClientProxy enableFeignClientProxy = primarySource.getAnnotation(EnableFeignClientProxy.class);
+        String[] scanBasePackages = enableFeignClientProxy.scanBasePackages();
+
+        for (int i = 0; i < scanBasePackages.length; i++) {
+            classes.addAll(loaderClassSet(scanBasePackages[i]));
+        }
+
+
         //过滤后的feign客户端class
         classes = filterAnnotation(FeignProxy.class, classes);
 
@@ -86,7 +94,7 @@ public class FeignConfig implements RuntimeChangeBytecode {
     }
 
     @Override
-    public String createChangeProxy(String basePackage, String resolverSearchPath) throws Exception {
+    public String createChangeProxy(Class<?> primarySource) throws Exception {
         return null;
     }
 

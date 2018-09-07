@@ -46,7 +46,7 @@ public interface RuntimeChangeBytecode {
      * @param resolverSearchPath 代理类生成的文件夹路径(target下的classes)
      * @return
      */
-    String createProxy(String basePackage, String resolverSearchPath) throws Exception;
+    String createProxy(Class<?> primarySource) throws Exception;
 
     /**
      * 动态改变当前class(代理类和class同包同名)
@@ -55,7 +55,7 @@ public interface RuntimeChangeBytecode {
      * @param resolverSearchPath 代理类生成的文件夹路径(target下的classes)
      * @return
      */
-    String createChangeProxy(String basePackage, String resolverSearchPath) throws Exception;
+    String createChangeProxy(Class<?> primarySource) throws Exception;
 
     /**
      * 获取要修改的所有class

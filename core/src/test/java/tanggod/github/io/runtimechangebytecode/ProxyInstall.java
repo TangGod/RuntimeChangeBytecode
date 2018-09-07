@@ -10,11 +10,11 @@ import tanggod.github.io.runtimechangebytecode.core.RuntimeChangeBytecode;
  */
 public class ProxyInstall {
 
-    public static void main(String[] args) throws Exception {
+   /* public static void main(String[] args) throws Exception {
         RuntimeChangeBytecode run = new FeignConfig();
         run.createProxy(null,null);
         System.out.println("install success ! ");
-    }
+    }*/
 
 
 }
